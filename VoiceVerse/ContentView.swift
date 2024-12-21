@@ -10,83 +10,94 @@ import PDFKit
 import UniformTypeIdentifiers
 
 struct ContentView: View {
-    @StateObject private var speechManager = SpeechManager()
+    @StateObject private var sentenceManager = SentenceManager()
+    @StateObject private var speechManager: SpeechManager
     @State private var pdfDocument: PDFDocument?
     @State private var showFileImporter = false
     @State private var documentTitle: String = ""
     
+    init() {
+        let sentenceManager = SentenceManager()
+        let speechManager = SpeechManager(sentenceManager: sentenceManager)
+        _sentenceManager = StateObject(wrappedValue: sentenceManager)
+        _speechManager = StateObject(wrappedValue: speechManager)
+    }
+    
     var body: some View {
         NavigationStack {
             if let pdfDocument = pdfDocument {
-                PDFViewerView.create(pdfDocument: pdfDocument, speechManager: speechManager)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .navigationTitle(documentTitle)
-                    .toolbar {
-                        ToolbarItem(placement: .navigation) {
-                            HStack(spacing: 12) {
-                                Button(action: {
-                                    NotificationCenter.default.post(name: NSNotification.Name("PreviousPage"), object: nil)
-                                }) {
-                                    Image(systemName: "chevron.left")
-                                }
-                                .help("上一页")
-                                
-                                Button(action: {
-                                    NotificationCenter.default.post(name: NSNotification.Name("NextPage"), object: nil)
-                                }) {
-                                    Image(systemName: "chevron.right")
-                                }
-                                .help("下一页")
-                                
-                                Divider()
-                                
-                                Button(action: {
-                                    NotificationCenter.default.post(name: NSNotification.Name("ZoomOut"), object: nil)
-                                }) {
-                                    Image(systemName: "minus.magnifyingglass")
-                                }
-                                .help("缩小")
-                                
-                                Button(action: {
-                                    NotificationCenter.default.post(name: NSNotification.Name("ZoomIn"), object: nil)
-                                }) {
-                                    Image(systemName: "plus.magnifyingglass")
-                                }
-                                .help("放大")
+                PDFViewerView(
+                    pdfDocument: pdfDocument,
+                    sentenceManager: sentenceManager,
+                    speechManager: speechManager
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .navigationTitle(documentTitle)
+                .toolbar {
+                    ToolbarItem(placement: .navigation) {
+                        HStack(spacing: 12) {
+                            Button(action: {
+                                NotificationCenter.default.post(name: NSNotification.Name("PreviousPage"), object: nil)
+                            }) {
+                                Image(systemName: "chevron.left")
                             }
-                        }
-                        
-                        ToolbarItem(placement: .primaryAction) {
-                            HStack(spacing: 8) {
-                                Button(action: {
-                                    if speechManager.isPlaying {
-                                        speechManager.pause()
-                                    } else if let text = pdfDocument.string {
-                                        if speechManager.currentText.isEmpty {
-                                            speechManager.speak(text: text)
-                                        } else {
-                                            speechManager.resume()
-                                        }
-                                    }
-                                }) {
-                                    Label(
-                                        speechManager.isPlaying ? "暂停" : "继续",
-                                        systemImage: speechManager.isPlaying ? "pause.fill" : "play.fill"
-                                    )
-                                }
-                                .help(speechManager.isPlaying ? "暂停朗读" : "继续朗读")
-                                
-                                Button(action: {
-                                    speechManager.stop()
-                                }) {
-                                    Label("停止", systemImage: "stop.fill")
-                                }
-                                .help("停止朗读")
+                            .help("上一页")
+                            
+                            Button(action: {
+                                NotificationCenter.default.post(name: NSNotification.Name("NextPage"), object: nil)
+                            }) {
+                                Image(systemName: "chevron.right")
                             }
+                            .help("下一页")
+                            
+                            Divider()
+                            
+                            Button(action: {
+                                NotificationCenter.default.post(name: NSNotification.Name("ZoomOut"), object: nil)
+                            }) {
+                                Image(systemName: "minus.magnifyingglass")
+                            }
+                            .help("缩小")
+                            
+                            Button(action: {
+                                NotificationCenter.default.post(name: NSNotification.Name("ZoomIn"), object: nil)
+                            }) {
+                                Image(systemName: "plus.magnifyingglass")
+                            }
+                            .help("放大")
                         }
                     }
-                    .toolbarBackground(.visible, for: .windowToolbar)
-                    .toolbarBackground(.ultraThinMaterial, for: .windowToolbar)
+                    
+                    ToolbarItem(placement: .primaryAction) {
+                        HStack(spacing: 8) {
+                            Button(action: {
+                                if speechManager.isPlaying {
+                                    speechManager.pause()
+                                } else if let text = pdfDocument.string {
+                                    if sentenceManager.getCurrentSentence().isEmpty {
+                                        sentenceManager.setText(text)
+                                    }
+                                    speechManager.speak()
+                                }
+                            }) {
+                                Label(
+                                    speechManager.isPlaying ? "暂停" : "继续",
+                                    systemImage: speechManager.isPlaying ? "pause.fill" : "play.fill"
+                                )
+                            }
+                            .help(speechManager.isPlaying ? "暂停朗读" : "继续朗读")
+                            
+                            Button(action: {
+                                speechManager.stop()
+                            }) {
+                                Label("停止", systemImage: "stop.fill")
+                            }
+                            .help("停止朗读")
+                        }
+                    }
+                }
+                .toolbarBackground(.visible, for: .windowToolbar)
+                .toolbarBackground(.ultraThinMaterial, for: .windowToolbar)
             } else {
                 VStack(spacing: 20) {
                     Button(action: {

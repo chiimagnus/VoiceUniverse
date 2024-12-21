@@ -2,45 +2,35 @@ import Foundation
 import AVFoundation
 
 @MainActor
-final class SpeechManager: NSObject, ObservableObject, @unchecked Sendable {
-    private let synthesizer = AVSpeechSynthesizer()
+final class SpeechManager: NSObject, ObservableObject {
     @Published var isPlaying = false
-    @Published var currentSentence: String = ""
-    @Published var currentText: String = ""
+    private let synthesizer = AVSpeechSynthesizer()
+    private let sentenceManager: SentenceManager
     
-    private var currentUtterance: AVSpeechUtterance?
-    private var currentIndex: Int = 0
-    private var isPaused: Bool = false
+    var onFinishSpeaking: (() -> Void)?
     
-    var onHighlight: ((String) -> Void)?
-    var onWordSpoken: ((String) -> Void)?
-    var onSentenceChanged: ((String) -> Void)?
-    
-    override init() {
+    init(sentenceManager: SentenceManager) {
+        self.sentenceManager = sentenceManager
         super.init()
         synthesizer.delegate = self
     }
     
-    func speak(text: String) {
-        currentText = text
-        isPaused = false
-        
-        if synthesizer.isPaused {
-            // 如果是暂停状态，从当前位置继续
-            let remainingText = String(text[text.index(text.startIndex, offsetBy: currentIndex)...])
-            let utterance = AVSpeechUtterance(string: remainingText)
-            configureUtterance(utterance)
-            currentUtterance = utterance
-            synthesizer.speak(utterance)
-        } else {
-            // 从头开始朗读
-            let utterance = AVSpeechUtterance(string: text)
-            configureUtterance(utterance)
-            currentUtterance = utterance
-            currentIndex = 0
-            synthesizer.speak(utterance)
+    func speak() {
+        guard let sentence = sentenceManager.nextSentence() else {
+            stop()
+            return
         }
         
+        // 直接朗读当前句子
+        speakSentence(sentence)
+        
+        // 句子变化会自动触发 onNextSentence 回调
+    }
+    
+    private func speakSentence(_ sentence: String) {
+        let utterance = AVSpeechUtterance(string: sentence)
+        configureUtterance(utterance)
+        synthesizer.speak(utterance)
         isPlaying = true
     }
     
@@ -54,100 +44,40 @@ final class SpeechManager: NSObject, ObservableObject, @unchecked Sendable {
     func stop() {
         synthesizer.stopSpeaking(at: .immediate)
         isPlaying = false
-        isPaused = false
-        currentUtterance = nil
-        currentText = ""
-        currentIndex = 0
-        currentSentence = ""
-        // 清除高亮
-        onHighlight?("")
-        onSentenceChanged?("")
+        sentenceManager.reset()
+        // 清除高亮也通过 sentenceManager 处理
+        sentenceManager.onNextSentence?("")
     }
     
     func pause() {
         synthesizer.pauseSpeaking(at: .word)
         isPlaying = false
-        isPaused = true
     }
     
     func resume() {
         if synthesizer.isPaused {
             synthesizer.continueSpeaking()
             isPlaying = true
-            isPaused = false
-        } else if isPaused && !currentText.isEmpty {
-            // 如果处于暂停状态但合成器没有暂停，从当前位置重新开始
-            let remainingText = String(currentText[currentText.index(currentText.startIndex, offsetBy: currentIndex)...])
-            let utterance = AVSpeechUtterance(string: remainingText)
-            configureUtterance(utterance)
-            currentUtterance = utterance
-            synthesizer.speak(utterance)
-            isPlaying = true
-            isPaused = false
         }
-    }
-    
-    // 添加一个方法来获取当前朗读文本所在的完整句子
-    func getCurrentFullSentence() -> String? {
-        // 如果当前文本或当前句子为空，返回nil
-        guard !currentText.isEmpty, !currentSentence.isEmpty else { return nil }
-        
-        // 将文本按句子分割，保留分隔符
-        var sentences: [String] = []
-        var currentSentenceText = ""
-        
-        for char in currentText {
-            currentSentenceText.append(char)
-            if ".!?。！？".contains(char) {
-                sentences.append(currentSentenceText)
-                currentSentenceText = ""
-            }
-        }
-        if !currentSentenceText.isEmpty {
-            sentences.append(currentSentenceText)
-        }
-        
-        // 找到包含当前朗读文本的句子
-        return sentences.first { sentence in
-            sentence.contains(currentSentence.trimmingCharacters(in: .whitespacesAndNewlines))
-        }?.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 
 extension SpeechManager: AVSpeechSynthesizerDelegate {
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange, utterance: AVSpeechUtterance) {
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         Task { @MainActor in
-            let sentence = (utterance.speechString as NSString).substring(with: characterRange)
-            currentSentence = sentence
-            onHighlight?(sentence)
-            onSentenceChanged?(getCurrentFullSentence() ?? "")
-            currentIndex = characterRange.location
+            onFinishSpeaking?()
         }
     }
     
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didPause utterance: AVSpeechUtterance) {
         Task { @MainActor in
             isPlaying = false
-            currentSentence = ""
-            currentUtterance = nil
-            isPaused = false
-            // 清除高亮
-            onHighlight?("")
-            onSentenceChanged?("")
         }
     }
     
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didPause utterance: AVSpeechUtterance) {
-        Task { @MainActor in
-            isPlaying = false
-            isPaused = true
-        }
-    }
-    
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didContinue utterance: AVSpeechUtterance) {
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didContinue utterance: AVSpeechUtterance) {
         Task { @MainActor in
             isPlaying = true
-            isPaused = false
         }
     }
 } 
