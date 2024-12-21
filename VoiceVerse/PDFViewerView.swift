@@ -11,11 +11,29 @@ struct PDFKitView: NSViewRepresentable {
     
     func makeNSView(context: Context) -> PDFView {
         pdfView.delegate = context.coordinator
+        
+        // 基本设置
+        pdfView.autoScales = true
+        pdfView.displayMode = .singlePage
+        pdfView.displayDirection = .vertical
+        
+        // 设置缩放
+        pdfView.minScaleFactor = 0.5
+        pdfView.maxScaleFactor = 4.0
+        pdfView.scaleFactor = 1.0  // 初始缩放比例
+        
+        // 设置页面布局
+        pdfView.pageShadowsEnabled = true
+        
         return pdfView
     }
     
     func updateNSView(_ nsView: PDFView, context: Context) {
-        // Update view if needed
+        // 更新视图大小
+        if let window = nsView.window {
+            let bounds = window.contentView?.bounds ?? .zero
+            nsView.frame = bounds
+        }
     }
     
     // Coordinator 类来处理 PDF 代理
@@ -102,18 +120,56 @@ struct PDFViewerView: View {
     }
     
     var body: some View {
-        PDFKitView(pdfView: pdfView, speechManager: speechManager)
-            .onAppear {
-                setupPDFView()
-                setupSpeechManagerCallbacks()
-            }
+        GeometryReader { geometry in
+            PDFKitView(pdfView: pdfView, speechManager: speechManager)
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .onAppear {
+                    setupPDFView()
+                    setupSpeechManagerCallbacks()
+                }
+        }
     }
     
     private func setupPDFView() {
+        // 基本设置
         pdfView.autoScales = true
-        pdfView.displayMode = .singlePage
+        pdfView.displayMode = .singlePageContinuous  // 连续页面模式
         pdfView.displayDirection = .vertical
+        
+        // 设置文档
         pdfView.document = pdfDocument
+        
+        // 设置缩放范围
+        pdfView.minScaleFactor = pdfView.scaleFactorForSizeToFit * 0.5  // 最小缩放到一半
+        pdfView.maxScaleFactor = 5.0  // 最大放大5倍
+        
+        // 设置页面布局
+        pdfView.pageShadowsEnabled = true  // 启用页面阴影
+        pdfView.pageBreakMargins = NSEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)  // 设置页间距
+        
+        // 配置滚动视图
+        if let scrollView = pdfView.documentView?.enclosingScrollView {
+            scrollView.hasVerticalScroller = true
+            scrollView.hasHorizontalScroller = false
+            scrollView.scrollerStyle = .overlay
+            scrollView.verticalScrollElasticity = .allowed
+            
+            // 设置背景颜色
+            scrollView.backgroundColor = .windowBackgroundColor
+            pdfView.backgroundColor = .windowBackgroundColor
+        }
+        
+        // 调整初始显示
+        DispatchQueue.main.async {
+            // 设置初始缩放以适应宽度
+            let scaleFactor = pdfView.scaleFactorForSizeToFit
+            pdfView.scaleFactor = scaleFactor
+            
+            // 滚动到文档开始
+            if let firstPage = pdfView.document?.page(at: 0) {
+                pdfView.go(to: PDFDestination(page: firstPage, at: NSPoint(x: 0, y: firstPage.bounds(for: .mediaBox).height)))
+            }
+        }
     }
     
     private func setupSpeechManagerCallbacks() {
