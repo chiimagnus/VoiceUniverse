@@ -120,13 +120,14 @@ struct PDFViewerView: View {
     }
     
     var body: some View {
+        // 直接使用 GeometryReader，不再包含工具栏
         GeometryReader { geometry in
             PDFKitView(pdfView: pdfView, speechManager: speechManager)
                 .frame(width: geometry.size.width, height: geometry.size.height)
-                .onAppear {
-                    setupPDFView()
-                    setupSpeechManagerCallbacks()
-                }
+        }
+        .onAppear {
+            setupPDFView()
+            setupSpeechManagerCallbacks()
         }
     }
     
@@ -161,7 +162,7 @@ struct PDFViewerView: View {
         
         // 调整初始显示
         DispatchQueue.main.async {
-            // 设置初始缩放以适应宽度
+            // 设置初始缩放以适应度
             let scaleFactor = pdfView.scaleFactorForSizeToFit
             pdfView.scaleFactor = scaleFactor
             

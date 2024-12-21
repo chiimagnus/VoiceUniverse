@@ -16,7 +16,7 @@ struct ContentView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // 顶部工具栏
+            // 顶部工具栏 - 添加 zIndex 确保始终在最上层
             HStack {
                 Button("打开 PDF") {
                     showFileImporter = true
@@ -32,10 +32,8 @@ struct ContentView: View {
                                 speechManager.pause()
                             } else if let text = pdfDocument?.string {
                                 if speechManager.currentText.isEmpty {
-                                    // 如果是第一次朗读或已经停止，从头开始
                                     speechManager.speak(text: text)
                                 } else {
-                                    // 否则继续朗读
                                     speechManager.resume()
                                 }
                             }
@@ -58,11 +56,13 @@ struct ContentView: View {
             }
             .padding()
             .background(Color(NSColor.windowBackgroundColor))
+            .zIndex(1) // 确保工具栏始终在最上层
             
-            // PDF 查看器
+            // PDF 查看区域
             if let pdfDocument = pdfDocument {
                 PDFViewerView.create(pdfDocument: pdfDocument, speechManager: speechManager)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .zIndex(0) // PDF 视图在底层
             } else {
                 VStack(spacing: 20) {
                     Image(systemName: "doc.text.fill")
