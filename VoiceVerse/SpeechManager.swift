@@ -13,6 +13,8 @@ final class SpeechManager: NSObject, ObservableObject, @unchecked Sendable {
     private var isPaused: Bool = false
     
     var onHighlight: ((String) -> Void)?
+    var onWordSpoken: ((String) -> Void)?
+    var onSentenceChanged: ((String) -> Void)?
     
     override init() {
         super.init()
@@ -57,6 +59,9 @@ final class SpeechManager: NSObject, ObservableObject, @unchecked Sendable {
         currentText = ""
         currentIndex = 0
         currentSentence = ""
+        // 清除高亮
+        onHighlight?("")
+        onSentenceChanged?("")
     }
     
     func pause() {
@@ -81,6 +86,32 @@ final class SpeechManager: NSObject, ObservableObject, @unchecked Sendable {
             isPaused = false
         }
     }
+    
+    // 添加一个方法来获取当前朗读文本所在的完整句子
+    func getCurrentFullSentence() -> String? {
+        // 如果当前文本或当前句子为空，返回nil
+        guard !currentText.isEmpty, !currentSentence.isEmpty else { return nil }
+        
+        // 将文本按句子分割，保留分隔符
+        var sentences: [String] = []
+        var currentSentenceText = ""
+        
+        for char in currentText {
+            currentSentenceText.append(char)
+            if ".!?。！？".contains(char) {
+                sentences.append(currentSentenceText)
+                currentSentenceText = ""
+            }
+        }
+        if !currentSentenceText.isEmpty {
+            sentences.append(currentSentenceText)
+        }
+        
+        // 找到包含当前朗读文本的句子
+        return sentences.first { sentence in
+            sentence.contains(currentSentence.trimmingCharacters(in: .whitespacesAndNewlines))
+        }?.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 }
 
 extension SpeechManager: AVSpeechSynthesizerDelegate {
@@ -89,6 +120,7 @@ extension SpeechManager: AVSpeechSynthesizerDelegate {
             let sentence = (utterance.speechString as NSString).substring(with: characterRange)
             currentSentence = sentence
             onHighlight?(sentence)
+            onSentenceChanged?(getCurrentFullSentence() ?? "")
             currentIndex = characterRange.location
         }
     }
@@ -99,7 +131,9 @@ extension SpeechManager: AVSpeechSynthesizerDelegate {
             currentSentence = ""
             currentUtterance = nil
             isPaused = false
-            // 保持 currentText 和 currentIndex，以便支持继续朗读
+            // 清除高亮
+            onHighlight?("")
+            onSentenceChanged?("")
         }
     }
     

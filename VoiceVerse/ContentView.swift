@@ -61,7 +61,7 @@ struct ContentView: View {
             
             // PDF 查看器
             if let pdfDocument = pdfDocument {
-                PDFViewerView(pdfDocument: pdfDocument, speechManager: speechManager)
+                PDFViewerView.create(pdfDocument: pdfDocument, speechManager: speechManager)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 VStack(spacing: 20) {
