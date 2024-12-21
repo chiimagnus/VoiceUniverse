@@ -120,7 +120,6 @@ struct PDFViewerView: View {
     }
     
     var body: some View {
-        // 直接使用 GeometryReader，不再包含工具栏
         GeometryReader { geometry in
             PDFKitView(pdfView: pdfView, speechManager: speechManager)
                 .frame(width: geometry.size.width, height: geometry.size.height)
@@ -128,6 +127,7 @@ struct PDFViewerView: View {
         .onAppear {
             setupPDFView()
             setupSpeechManagerCallbacks()
+            setupMenuCommandObservers()
         }
     }
     
@@ -155,9 +155,15 @@ struct PDFViewerView: View {
             scrollView.scrollerStyle = .overlay
             scrollView.verticalScrollElasticity = .allowed
             
+            // 设置内容边距，为工具栏留出空间
+            let contentInsets = NSEdgeInsets(top: 28, left: 0, bottom: 0, right: 0)
+            scrollView.contentInsets = contentInsets
+            scrollView.scrollerInsets = contentInsets
+            
             // 设置背景颜色
-            scrollView.backgroundColor = .windowBackgroundColor
-            pdfView.backgroundColor = .windowBackgroundColor
+            scrollView.backgroundColor = .clear
+            scrollView.drawsBackground = false
+            pdfView.backgroundColor = .clear
         }
         
         // 调整初始显示
@@ -178,12 +184,93 @@ struct PDFViewerView: View {
         speechManager.onSentenceChanged = { [highlightManager] sentence in
             Task { @MainActor in
                 highlightManager.highlightSentence(sentence)
+                // 确保高亮时不会改变滚动视图的内容边距
+                if let scrollView = pdfView.documentView?.enclosingScrollView {
+                    let contentInsets = NSEdgeInsets(top: 52, left: 0, bottom: 0, right: 0)
+                    scrollView.contentInsets = contentInsets
+                }
             }
         }
         
         speechManager.onHighlight = { [highlightManager] word in
             Task { @MainActor in
                 highlightManager.highlightSentence(word)
+                // 确保高亮时不会改变滚动视图的内容边距
+                if let scrollView = pdfView.documentView?.enclosingScrollView {
+                    let contentInsets = NSEdgeInsets(top: 52, left: 0, bottom: 0, right: 0)
+                    scrollView.contentInsets = contentInsets
+                }
+            }
+        }
+    }
+    
+    private func setupMenuCommandObservers() {
+        // 自动调整大小命令
+        NotificationCenter.default.addObserver(forName: NSNotification.Name("AutoResize"), object: nil, queue: .main) { _ in
+            pdfView.autoScales = true
+            // 调整缩放以适应视图大小
+            if let scrollView = pdfView.documentView?.enclosingScrollView {
+                let viewSize = scrollView.contentView.bounds.size
+                if let firstPage = pdfView.document?.page(at: 0) {
+                    let pageSize = firstPage.bounds(for: .mediaBox).size
+                    let scaleWidth = viewSize.width / pageSize.width
+                    let scaleHeight = viewSize.height / pageSize.height
+                    let scale = min(scaleWidth, scaleHeight)
+                    pdfView.scaleFactor = scale
+                }
+            }
+        }
+        
+        // 缩放命令
+        NotificationCenter.default.addObserver(forName: NSNotification.Name("ZoomIn"), object: nil, queue: .main) { _ in
+            pdfView.scaleFactor *= 1.25
+        }
+        
+        NotificationCenter.default.addObserver(forName: NSNotification.Name("ZoomOut"), object: nil, queue: .main) { _ in
+            pdfView.scaleFactor *= 0.8
+        }
+        
+        NotificationCenter.default.addObserver(forName: NSNotification.Name("ActualSize"), object: nil, queue: .main) { _ in
+            pdfView.scaleFactor = 1.0
+        }
+        
+        // 页面显示模式命令
+        NotificationCenter.default.addObserver(forName: NSNotification.Name("SinglePage"), object: nil, queue: .main) { _ in
+            pdfView.displayMode = .singlePage
+        }
+        
+        NotificationCenter.default.addObserver(forName: NSNotification.Name("SinglePageContinuous"), object: nil, queue: .main) { _ in
+            pdfView.displayMode = .singlePageContinuous
+        }
+        
+        NotificationCenter.default.addObserver(forName: NSNotification.Name("TwoPages"), object: nil, queue: .main) { _ in
+            pdfView.displayMode = .twoUp
+        }
+        
+        NotificationCenter.default.addObserver(forName: NSNotification.Name("TwoPagesContinuous"), object: nil, queue: .main) { _ in
+            pdfView.displayMode = .twoUpContinuous
+        }
+        
+        // 页面导航命令
+        NotificationCenter.default.addObserver(forName: NSNotification.Name("NextPage"), object: nil, queue: .main) { _ in
+            if let currentPage = pdfView.currentPage,
+               let nextPageIndex = pdfView.document?.index(for: currentPage) {
+                let nextIndex = nextPageIndex + 1
+                if nextIndex < pdfView.document?.pageCount ?? 0,
+                   let nextPage = pdfView.document?.page(at: nextIndex) {
+                    pdfView.go(to: nextPage)
+                }
+            }
+        }
+        
+        NotificationCenter.default.addObserver(forName: NSNotification.Name("PreviousPage"), object: nil, queue: .main) { _ in
+            if let currentPage = pdfView.currentPage,
+               let previousPageIndex = pdfView.document?.index(for: currentPage) {
+                let previousIndex = previousPageIndex - 1
+                if previousIndex >= 0,
+                   let previousPage = pdfView.document?.page(at: previousIndex) {
+                    pdfView.go(to: previousPage)
+                }
             }
         }
     }
