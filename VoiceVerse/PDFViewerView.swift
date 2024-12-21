@@ -180,26 +180,15 @@ struct PDFViewerView: View {
     }
     
     private func setupSpeechManagerCallbacks() {
-        // 设置回调
         speechManager.onSentenceChanged = { [highlightManager] sentence in
             Task { @MainActor in
                 highlightManager.highlightSentence(sentence)
-                // 确保高亮时不会改变滚动视图的内容边距
-                if let scrollView = pdfView.documentView?.enclosingScrollView {
-                    let contentInsets = NSEdgeInsets(top: 52, left: 0, bottom: 0, right: 0)
-                    scrollView.contentInsets = contentInsets
-                }
             }
         }
         
         speechManager.onHighlight = { [highlightManager] word in
             Task { @MainActor in
                 highlightManager.highlightSentence(word)
-                // 确保高亮时不会改变滚动视图的内容边距
-                if let scrollView = pdfView.documentView?.enclosingScrollView {
-                    let contentInsets = NSEdgeInsets(top: 52, left: 0, bottom: 0, right: 0)
-                    scrollView.contentInsets = contentInsets
-                }
             }
         }
     }
