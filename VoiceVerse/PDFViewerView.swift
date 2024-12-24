@@ -50,12 +50,14 @@ struct PDFKitView: NSViewRepresentable {
             
             Task { @MainActor in
                 guard let selection = pdfView.currentSelection,
-                      let selectedText = selection.string else { return }
+                      let selectedText = selection.string,
+                      let currentPage = pdfView.currentPage,
+                      let pageIndex = pdfView.document?.index(for: currentPage) else { return }
                 
                 // 停止当前朗读
                 parent.speechManager.stop()
                 // 设置新文本并开始朗读
-                parent.sentenceManager.setText(selectedText)
+                parent.sentenceManager.setText(selectedText, pageIndex: pageIndex)
                 parent.speechManager.speak()
             }
         }
@@ -63,10 +65,11 @@ struct PDFKitView: NSViewRepresentable {
         nonisolated func pdfView(_ pdfView: PDFView, clickedAt point: NSPoint) {
             Task { @MainActor in
                 guard let page = pdfView.page(for: point, nearest: true),
-                      let pageText = page.string else { return }
+                      let pageText = page.string,
+                      let pageIndex = pdfView.document?.index(for: page) else { return }
                 
                 // 不需要在这里自己分割句子，应该使用 SentenceManager 来处理
-                parent.sentenceManager.setText(pageText)  // 让 SentenceManager 处理文本分割
+                parent.sentenceManager.setText(pageText, pageIndex: pageIndex)  // 让 SentenceManager 处理文本分割
                 parent.speechManager.speak()  // 开始朗读第一个句子
             }
         }
@@ -233,14 +236,29 @@ struct PDFViewerView: View {
     
     private func setupCallbacks() {
         // 设置文本并开始处理
-        if let text = pdfDocument.string {
-            sentenceManager.setText(text)
+        if let firstPage = pdfDocument.page(at: 0),
+           let pageText = firstPage.string {
+            // 从第一页开始设置文本
+            sentenceManager.setText(pageText, pageIndex: 0)
         }
         
         // 朗读完一个句子后自动朗读下一个
         speechManager.onFinishSpeaking = {
             if !sentenceManager.isLastSentence {
                 speechManager.speak()
+            } else {
+                // 如果当前页面的最后一句已读完，尝试切换到下一页
+                if let currentPage = self.pdfView.currentPage {
+                    let currentPageIndex = self.pdfDocument.index(for: currentPage)
+                    if currentPageIndex + 1 < self.pdfDocument.pageCount,
+                       let nextPage = self.pdfDocument.page(at: currentPageIndex + 1),
+                       let nextPageText = nextPage.string {
+                        // 切换到下一页
+                        self.pdfView.go(to: nextPage)
+                        self.sentenceManager.setText(nextPageText, pageIndex: currentPageIndex + 1)
+                        self.speechManager.speak()
+                    }
+                }
             }
         }
         

@@ -73,9 +73,11 @@ struct ContentView: View {
                             Button(action: {
                                 if speechManager.isPlaying {
                                     speechManager.pause()
-                                } else if let text = pdfDocument.string {
+                                } else if let currentPage = pdfDocument.page(at: 0),
+                                          let pageText = currentPage.string {
                                     if sentenceManager.getCurrentSentence().isEmpty {
-                                        sentenceManager.setText(text)
+                                        // 从当前页面开始朗读
+                                        sentenceManager.setText(pageText, pageIndex: 0)
                                     }
                                     speechManager.speak()
                                 }
@@ -133,6 +135,18 @@ struct ContentView: View {
                 if let document = PDFDocument(url: file) {
                     pdfDocument = document
                     documentTitle = file.lastPathComponent
+                    
+                    // 打印调试信息
+                    print("PDF 总页数: \(document.pageCount)")
+                    
+                    // 获取前5页的句子数
+                    for pageIndex in 0..<min(5, document.pageCount) {
+                        if let page = document.page(at: pageIndex),
+                           let pageText = page.string {
+                            let sentences = splitIntoSentences(pageText)
+                            print("第 \(pageIndex + 1) 页句子数: \(sentences.count)")
+                        }
+                    }
                 }
             case .failure(let error):
                 print("Error selecting file: \(error.localizedDescription)")
@@ -148,6 +162,34 @@ struct ContentView: View {
                 showFileImporter = true
             }
         }
+    }
+    
+    // 辅助函数：将文本分割成句子
+    private func splitIntoSentences(_ text: String) -> [String] {
+        let separators = CharacterSet(charactersIn: "。！？\n")
+        var sentences: [String] = []
+        var currentSentence = ""
+        
+        for char in text {
+            currentSentence.append(char)
+            if CharacterSet(charactersIn: String(char)).isSubset(of: separators) {
+                let trimmed = currentSentence.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmed.isEmpty {
+                    sentences.append(trimmed)
+                }
+                currentSentence = ""
+            }
+        }
+        
+        // 处理最后一个句子
+        if !currentSentence.isEmpty {
+            let trimmed = currentSentence.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty {
+                sentences.append(trimmed)
+            }
+        }
+        
+        return sentences
     }
 }
 

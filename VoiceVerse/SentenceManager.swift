@@ -1,45 +1,59 @@
 import Foundation
 import SwiftUI
+import PDFKit
 
 @MainActor
 final class SentenceManager: ObservableObject {
     @Published private(set) var currentSentence: String = ""
     @Published private(set) var isLastSentence: Bool = false
     @Published private(set) var hasText: Bool = false
-    private var sentences: [String] = []
-    private var currentIndex: Int = -1
+    @Published private(set) var currentPageIndex: Int = 0
+    @Published private(set) var currentSentenceIndex: Int = 0
+    @Published private(set) var totalSentencesInCurrentPage: Int = 0
     
-    var onNextSentence: ((String) -> Void)?  // 新增回调
+    // 存储每个页面的句子
+    private var pagesSentences: [Int: [String]] = [:]
+    private var currentPageSentences: [String] = []
+    
+    var onNextSentence: ((String) -> Void)?
     
     // 设置新的文本并重置状态
-    func setText(_ text: String) {
-        print("Setting text, length: \(text.count)")
-        sentences = splitIntoSentences(text)
-        print("Split into \(sentences.count) sentences")
-        currentIndex = -1
-        currentSentence = ""
-        isLastSentence = false
-        hasText = !sentences.isEmpty
+    func setText(_ text: String, pageIndex: Int) {
+        print("Setting text for page \(pageIndex), length: \(text.count)")
+        let sentences = splitIntoSentences(text)
+        pagesSentences[pageIndex] = sentences
+        
+        if currentPageIndex == pageIndex {
+            // 如果是当前页面，更新当前页面的句子
+            updateCurrentPage(pageIndex)
+        }
+        
+        hasText = !pagesSentences.isEmpty
+    }
+    
+    // 切换到指定页面
+    func switchToPage(_ pageIndex: Int) {
+        currentPageIndex = pageIndex
+        updateCurrentPage(pageIndex)
+        reset()
     }
     
     // 获取下一个句子
     func nextSentence() -> String? {
-        guard !sentences.isEmpty else { return nil }
+        guard !currentPageSentences.isEmpty else { return nil }
         
-        currentIndex += 1
-        if currentIndex >= sentences.count {
-            currentIndex = sentences.count - 1
+        currentSentenceIndex += 1
+        if currentSentenceIndex >= currentPageSentences.count {
+            currentSentenceIndex = currentPageSentences.count - 1
             isLastSentence = true
             return nil
         }
         
-        currentSentence = sentences[currentIndex]
-        isLastSentence = currentIndex == sentences.count - 1
-        print("Next sentence [\(currentIndex)/\(sentences.count)]: \(currentSentence)")
+        currentSentence = currentPageSentences[currentSentenceIndex]
+        isLastSentence = currentSentenceIndex == currentPageSentences.count - 1
+        print("Next sentence [\(currentSentenceIndex)/\(currentPageSentences.count)] on page \(currentPageIndex): \(currentSentence)")
         
-        // 触发回调，通知监听者句子变化
         onNextSentence?(currentSentence)
-        
         return currentSentence
     }
     
@@ -48,18 +62,35 @@ final class SentenceManager: ObservableObject {
         return currentSentence
     }
     
-    // 重置到开始位置
+    // 重置到当前页面的开始位置
     func reset() {
-        currentIndex = -1
+        currentSentenceIndex = -1
         currentSentence = ""
         isLastSentence = false
-        hasText = !sentences.isEmpty
+        hasText = !pagesSentences.isEmpty
+    }
+    
+    // 获取当前页面的总句子数
+    func getCurrentPageSentenceCount() -> Int {
+        return currentPageSentences.count
+    }
+    
+    // 获取当前页面的句子索引（从1开始）
+    func getCurrentSentenceNumber() -> Int {
+        return currentSentenceIndex + 1
+    }
+    
+    // 私有方法：更新当前页面的句子
+    private func updateCurrentPage(_ pageIndex: Int) {
+        currentPageSentences = pagesSentences[pageIndex] ?? []
+        totalSentencesInCurrentPage = currentPageSentences.count
+        print("Updated to page \(pageIndex) with \(totalSentencesInCurrentPage) sentences")
     }
     
     // 将文本分割成句子
     private func splitIntoSentences(_ text: String) -> [String] {
         // 定义句子分隔符
-        let separators = CharacterSet(charactersIn: "。！？\n")  // 简化分隔符,主要使用中文标点
+        let separators = CharacterSet(charactersIn: "。！？\n")
         var sentences: [String] = []
         var currentSentence = ""
         
@@ -83,13 +114,5 @@ final class SentenceManager: ObservableObject {
         }
         
         return sentences
-    }
-    
-    // 中心化的处理下一个句子的函数
-    func processNextSentence() {
-        guard let sentence = nextSentence() else { return }
-        
-        // 通知所有监听者
-        onNextSentence?(sentence)
     }
 } 
