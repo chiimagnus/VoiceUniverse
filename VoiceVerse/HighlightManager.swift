@@ -1,4 +1,5 @@
 import PDFKit
+import AppKit
 
 @MainActor
 class HighlightManager: ObservableObject {
@@ -38,17 +39,22 @@ class HighlightManager: ObservableObject {
     func highlightSentence(_ sentence: String, at location: Int = 0) {
         print("Attempting to highlight: \(sentence)")
         
+        // 如果是空字符串，直接清除高亮并返回
+        if sentence.isEmpty {
+            print("Empty sentence, removing highlight")
+            removeHighlight()
+            return
+        }
+        
+        // 如果是相同的文本，跳过
         guard sentence != lastHighlightedText else {
             print("Same as last text, skipping")
             return
         }
         lastHighlightedText = sentence
         
-        if sentence.isEmpty {
-            print("Empty sentence, removing highlight")
-            removeHighlight()
-            return
-        }
+        // 在添加新高亮前，先清除旧的高亮
+        removeHighlight()
         
         guard let document = pdfView.document else {
             print("No PDF document found")
@@ -174,11 +180,30 @@ class HighlightManager: ObservableObject {
     }
     
     private func removeHighlight() {
+        // 移除当前高亮
         if let currentAnnotation = currentAnnotation,
            let page = currentAnnotation.page {
             page.removeAnnotation(currentAnnotation)
         }
         currentAnnotation = nil
+        
+        // 确保清除所有页面上的高亮
+        if let document = pdfView.document {
+            for pageIndex in 0..<document.pageCount {
+                guard let page = document.page(at: pageIndex) else { continue }
+                for annotation in page.annotations {
+                    // PDFAnnotation的type属性是String类型，值为"Highlight"
+                    if annotation.type == "Highlight" {
+                        page.removeAnnotation(annotation)
+                    }
+                }
+            }
+        }
+        
+        // 重置状态
+        lastHighlightedText = ""
+        lastHighlightedPage = nil
+        lastHighlightLocation = 0
     }
     
     private func findBestMatchingSentence(_ text: String, in sentences: [String]) -> String? {
@@ -187,7 +212,7 @@ class HighlightManager: ObservableObject {
             return exact
         }
         
-        // 2. 包含匹配（考虑标点符号和��格）
+        // 2. 包含匹配（考虑标点符号和格）
         let cleanText = text.trimmingCharacters(in: .whitespacesAndNewlines)
         return sentences.first { sentence in
             let cleanSentence = sentence.trimmingCharacters(in: .whitespacesAndNewlines)

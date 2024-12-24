@@ -8,6 +8,7 @@ final class SpeechManager: NSObject, ObservableObject {
     private let sentenceManager: SentenceManager
     
     var onFinishSpeaking: (() -> Void)?
+    var onFinishSentence: (() -> Void)?
     
     init(sentenceManager: SentenceManager) {
         self.sentenceManager = sentenceManager
@@ -65,7 +66,11 @@ final class SpeechManager: NSObject, ObservableObject {
 extension SpeechManager: AVSpeechSynthesizerDelegate {
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         Task { @MainActor in
-            onFinishSpeaking?()
+            onFinishSentence?()  // 先清除当前句子的高亮
+            
+            // 短暂延迟后再处理下一句，确保高亮清除效果可见
+            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1秒延迟
+            onFinishSpeaking?()  // 然后再处理下一句
         }
     }
     

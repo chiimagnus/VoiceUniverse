@@ -237,11 +237,16 @@ struct PDFViewerView: View {
             sentenceManager.setText(text)
         }
         
-        // 朗读完���个句子后自动朗读下一个
+        // 朗读完一个句子后自动朗读下一个
         speechManager.onFinishSpeaking = {
             if !sentenceManager.isLastSentence {
                 speechManager.speak()
             }
+        }
+        
+        // 当句子朗读完成时清除高亮
+        speechManager.onFinishSentence = { [highlightManager] in
+            highlightManager.highlightSentence("")  // 清除高亮
         }
         
         // 当句子改变时更新高亮
