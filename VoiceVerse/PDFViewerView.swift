@@ -114,9 +114,15 @@ struct PDFViewerView: View {
             }
             
             // 底部进度条
-            ProgressBarView(sentenceManager: sentenceManager, totalPages: pdfDocument.pageCount)
-                .frame(height: 40)
-                .background(.ultraThinMaterial)
+            ProgressBarView(
+                sentenceManager: sentenceManager,
+                totalPages: pdfDocument.pageCount,
+                pdfView: pdfView,
+                speechManager: speechManager,
+                pdfDocument: pdfDocument
+            )
+            .frame(height: 40)
+            .background(.ultraThinMaterial)
         }
         .onAppear {
             setupPDFView()
@@ -288,16 +294,55 @@ struct PDFViewerView: View {
 struct ProgressBarView: View {
     @ObservedObject var sentenceManager: SentenceManager
     let totalPages: Int
+    let pdfView: PDFView
+    let speechManager: SpeechManager
+    let pdfDocument: PDFDocument
+    
+    @State private var showingPageDialog = false
+    @State private var showingSentenceDialog = false
+    @State private var inputText = ""
     
     var body: some View {
         HStack(spacing: 16) {
             // 页面信息
-            Text("page: \(sentenceManager.currentPageIndex + 1)/\(totalPages)")
-                .monospacedDigit()
+            Button(action: {
+                showingPageDialog = true
+            }) {
+                Text("page: \(sentenceManager.currentPageIndex + 1)/\(totalPages)")
+                    .monospacedDigit()
+                    .foregroundColor(.primary)
+            }
+            .buttonStyle(.plain)
+            .sheet(isPresented: $showingPageDialog) {
+                PageJumpDialog(
+                    isPresented: $showingPageDialog,
+                    totalPages: totalPages,
+                    onJump: { pageNumber in
+                        jumpToPage(pageNumber - 1)  // 转换为0基索引
+                    }
+                )
+                .frame(width: 300, height: 150)
+            }
             
             // 句子进度
-            Text("sentence: \(sentenceManager.getCurrentSentenceNumber())/\(sentenceManager.getCurrentPageSentenceCount())")
-                .monospacedDigit()
+            Button(action: {
+                showingSentenceDialog = true
+            }) {
+                Text("sentence: \(sentenceManager.getCurrentSentenceNumber())/\(sentenceManager.getCurrentPageSentenceCount())")
+                    .monospacedDigit()
+                    .foregroundColor(.primary)
+            }
+            .buttonStyle(.plain)
+            .sheet(isPresented: $showingSentenceDialog) {
+                SentenceJumpDialog(
+                    isPresented: $showingSentenceDialog,
+                    totalSentences: sentenceManager.getCurrentPageSentenceCount(),
+                    onJump: { sentenceNumber in
+                        jumpToSentence(sentenceNumber - 1)  // 转换为0基索引
+                    }
+                )
+                .frame(width: 300, height: 150)
+            }
             
             // 进度条
             GeometryReader { geometry in
@@ -317,7 +362,7 @@ struct ProgressBarView: View {
             
             // 下一句按钮
             Button(action: {
-                // 暂时留空，后续实现跳转功能
+                speechManager.speak()
             }) {
                 Text("下一句")
             }
@@ -331,6 +376,125 @@ struct ProgressBarView: View {
     private var progress: Double {
         guard sentenceManager.getCurrentPageSentenceCount() > 0 else { return 0 }
         return Double(sentenceManager.getCurrentSentenceNumber()) / Double(sentenceManager.getCurrentPageSentenceCount())
+    }
+    
+    // 跳转到指定页面
+    private func jumpToPage(_ pageIndex: Int) {
+        guard let page = pdfDocument.page(at: pageIndex),
+              let pageText = page.string else { return }
+        
+        // 停止当前朗读
+        speechManager.stop()
+        
+        // 切换到目标页面
+        pdfView.go(to: page)
+        
+        // 设置新页面的文本
+        sentenceManager.setText(pageText, pageIndex: pageIndex)
+        
+        // 开始朗读
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            speechManager.speak()
+        }
+    }
+    
+    // 跳转到当前页面的指定句子
+    private func jumpToSentence(_ sentenceIndex: Int) {
+        // 停止当前朗读
+        speechManager.stop()
+        
+        // 重置到开始位置
+        sentenceManager.reset()
+        
+        // 跳转到指定句子
+        for _ in 0..<sentenceIndex {
+            _ = sentenceManager.nextSentence()
+        }
+        
+        // 开始朗读
+        speechManager.speak()
+    }
+}
+
+// 页面跳转对话框
+struct PageJumpDialog: View {
+    @Binding var isPresented: Bool
+    let totalPages: Int
+    let onJump: (Int) -> Void
+    
+    @State private var inputText: String = ""
+    @FocusState private var isFocused: Bool
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("跳转到页面")
+                .font(.headline)
+            
+            TextField("输入页码 (1-\(totalPages))", text: $inputText)
+                .textFieldStyle(.roundedBorder)
+                .focused($isFocused)
+                .frame(width: 200)
+            
+            HStack(spacing: 20) {
+                Button("取消") {
+                    isPresented = false
+                }
+                
+                Button("确定") {
+                    if let pageNumber = Int(inputText),
+                       pageNumber >= 1 && pageNumber <= totalPages {
+                        onJump(pageNumber)
+                        isPresented = false
+                    }
+                }
+                .keyboardShortcut(.return, modifiers: [])
+            }
+        }
+        .padding()
+        .onAppear {
+            isFocused = true
+        }
+    }
+}
+
+// 句子跳转对话框
+struct SentenceJumpDialog: View {
+    @Binding var isPresented: Bool
+    let totalSentences: Int
+    let onJump: (Int) -> Void
+    
+    @State private var inputText: String = ""
+    @FocusState private var isFocused: Bool
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("跳转到句子")
+                .font(.headline)
+            
+            TextField("输入句子编号 (1-\(totalSentences))", text: $inputText)
+                .textFieldStyle(.roundedBorder)
+                .focused($isFocused)
+                .frame(width: 200)
+            
+            HStack(spacing: 20) {
+                Button("取消") {
+                    isPresented = false
+                }
+                
+                Button("确定") {
+                    if let sentenceNumber = Int(inputText),
+                       sentenceNumber >= 1 && sentenceNumber <= totalSentences {
+                        onJump(sentenceNumber)
+                        isPresented = false
+                    }
+                }
+                .keyboardShortcut(.return, modifiers: [])
+            }
+        }
+        .padding()
+        .onAppear {
+            isFocused = true
+        }
     }
 }
 
