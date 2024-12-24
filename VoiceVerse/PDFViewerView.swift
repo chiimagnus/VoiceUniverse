@@ -103,13 +103,20 @@ struct PDFViewerView: View {
     }
     
     var body: some View {
-        GeometryReader { geometry in
-            PDFKitView(
-                pdfView: pdfView,
-                speechManager: speechManager,
-                sentenceManager: sentenceManager
-            )
-            .frame(width: geometry.size.width, height: geometry.size.height)
+        VStack(spacing: 0) {
+            GeometryReader { geometry in
+                PDFKitView(
+                    pdfView: pdfView,
+                    speechManager: speechManager,
+                    sentenceManager: sentenceManager
+                )
+                .frame(width: geometry.size.width, height: geometry.size.height)
+            }
+            
+            // 底部进度条
+            ProgressBarView(sentenceManager: sentenceManager, totalPages: pdfDocument.pageCount)
+                .frame(height: 40)
+                .background(.ultraThinMaterial)
         }
         .onAppear {
             setupPDFView()
@@ -274,6 +281,56 @@ struct PDFViewerView: View {
         sentenceManager.onNextSentence = { [highlightManager] sentence in
             highlightManager.highlightSentence(sentence)
         }
+    }
+}
+
+// 进度条视图
+struct ProgressBarView: View {
+    @ObservedObject var sentenceManager: SentenceManager
+    let totalPages: Int
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            // 页面信息
+            Text("page: \(sentenceManager.currentPageIndex + 1)/\(totalPages)")
+                .monospacedDigit()
+            
+            // 句子进度
+            Text("sentence: \(sentenceManager.getCurrentSentenceNumber())/\(sentenceManager.getCurrentPageSentenceCount())")
+                .monospacedDigit()
+            
+            // 进度条
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    // 背景
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color.gray.opacity(0.2))
+                    
+                    // 进度
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color.accentColor)
+                        .frame(width: geometry.size.width * progress)
+                }
+                .frame(height: 4)
+            }
+            .frame(height: 4)
+            
+            // 下一句按钮
+            Button(action: {
+                // 暂时留空，后续实现跳转功能
+            }) {
+                Text("下一句")
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 8)
+        }
+        .padding(.horizontal)
+    }
+    
+    // 计算当前进度（0-1之间）
+    private var progress: Double {
+        guard sentenceManager.getCurrentPageSentenceCount() > 0 else { return 0 }
+        return Double(sentenceManager.getCurrentSentenceNumber()) / Double(sentenceManager.getCurrentPageSentenceCount())
     }
 }
 
