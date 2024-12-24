@@ -23,12 +23,16 @@ final class SentenceManager: ObservableObject {
         let sentences = splitIntoSentences(text)
         pagesSentences[pageIndex] = sentences
         
-        if currentPageIndex == pageIndex {
-            // 如果是当前页面，更新当前页面的句子
+        // 如果是设置新页面的文本，自动切换到该页面
+        if currentPageIndex != pageIndex {
+            switchToPage(pageIndex)
+        } else {
+            // 如果是当前页面，只更新句子
             updateCurrentPage(pageIndex)
         }
         
         hasText = !pagesSentences.isEmpty
+        print("Page \(pageIndex) has \(sentences.count) sentences")
     }
     
     // 切换到指定页面
@@ -51,7 +55,7 @@ final class SentenceManager: ObservableObject {
         
         currentSentence = currentPageSentences[currentSentenceIndex]
         isLastSentence = currentSentenceIndex == currentPageSentences.count - 1
-        print("Next sentence [\(currentSentenceIndex)/\(currentPageSentences.count)] on page \(currentPageIndex): \(currentSentence)")
+        print("Next sentence [\(currentSentenceIndex + 1)/\(currentPageSentences.count)] on page \(currentPageIndex): \(currentSentence)")
         
         onNextSentence?(currentSentence)
         return currentSentence
@@ -68,6 +72,7 @@ final class SentenceManager: ObservableObject {
         currentSentence = ""
         isLastSentence = false
         hasText = !pagesSentences.isEmpty
+        print("Reset state for page \(currentPageIndex)")
     }
     
     // 获取当前页面的总句子数

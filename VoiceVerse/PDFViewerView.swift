@@ -248,14 +248,17 @@ struct PDFViewerView: View {
                 speechManager.speak()
             } else {
                 // 如果当前页面的最后一句已读完，尝试切换到下一页
-                if let currentPage = self.pdfView.currentPage {
-                    let currentPageIndex = self.pdfDocument.index(for: currentPage)
-                    if currentPageIndex + 1 < self.pdfDocument.pageCount,
-                       let nextPage = self.pdfDocument.page(at: currentPageIndex + 1),
-                       let nextPageText = nextPage.string {
-                        // 切换到下一页
-                        self.pdfView.go(to: nextPage)
-                        self.sentenceManager.setText(nextPageText, pageIndex: currentPageIndex + 1)
+                let nextPageIndex = sentenceManager.currentPageIndex + 1
+                if nextPageIndex < self.pdfDocument.pageCount,
+                   let nextPage = self.pdfDocument.page(at: nextPageIndex),
+                   let nextPageText = nextPage.string {
+                    print("Switching to page \(nextPageIndex)")
+                    // 切换到下一页
+                    self.pdfView.go(to: nextPage)
+                    // 设置新页面的文本
+                    self.sentenceManager.setText(nextPageText, pageIndex: nextPageIndex)
+                    // 确保重置状态后再开始朗读
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         self.speechManager.speak()
                     }
                 }
