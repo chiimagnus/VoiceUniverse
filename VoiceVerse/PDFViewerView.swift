@@ -282,7 +282,15 @@ struct PDFViewerView: View {
         }
         
         // 朗读完一个句子后自动朗读下一个
-        speechManager.onFinishSpeaking = {
+        speechManager.onFinishSpeaking = { [weak speechManager] in
+            guard let speechManager = speechManager else { return }
+            
+            // 如果是用户手动触发的，不要自动朗读下一句
+            if speechManager.isUserInitiated {
+                return
+            }
+            
+            // 只有在自动模式下才继续朗读下一句
             if !sentenceManager.isLastSentence {
                 speechManager.speak()
             } else {
@@ -298,7 +306,7 @@ struct PDFViewerView: View {
                     self.sentenceManager.setText(nextPageText, pageIndex: nextPageIndex)
                     // 确保重置状态后再开始朗读
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        self.speechManager.speak()
+                        speechManager.speak()
                     }
                 }
             }
