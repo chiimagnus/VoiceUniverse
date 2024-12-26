@@ -26,14 +26,6 @@ struct VoiceVerseApp: App {
             
             // 扩展系统 View 菜单
             CommandGroup(after: .toolbar) {
-                // 自动调整大小
-                Button("自动调整大小") {
-                    NotificationCenter.default.post(name: NSNotification.Name("AutoResize"), object: nil)
-                }
-                .keyboardShortcut("r", modifiers: .command)
-                
-                Divider()
-                
                 // 缩放选项
                 Button("放大") {
                     NotificationCenter.default.post(name: NSNotification.Name("ZoomIn"), object: nil)

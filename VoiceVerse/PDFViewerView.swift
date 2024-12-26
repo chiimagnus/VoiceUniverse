@@ -204,22 +204,6 @@ struct PDFViewerView: View {
     }
     
     private func setupMenuCommandObservers() {
-        // 自动调整大小命令
-        NotificationCenter.default.addObserver(forName: NSNotification.Name("AutoResize"), object: nil, queue: .main) { _ in
-            pdfView.autoScales = true
-            // 调整缩放以适应视图大小
-            if let scrollView = pdfView.documentView?.enclosingScrollView {
-                let viewSize = scrollView.contentView.bounds.size
-                if let firstPage = pdfView.document?.page(at: 0) {
-                    let pageSize = firstPage.bounds(for: .mediaBox).size
-                    let scaleWidth = viewSize.width / pageSize.width
-                    let scaleHeight = viewSize.height / pageSize.height
-                    let scale = min(scaleWidth, scaleHeight)
-                    pdfView.scaleFactor = scale
-                }
-            }
-        }
-        
         // 缩放命令
         NotificationCenter.default.addObserver(forName: NSNotification.Name("ZoomIn"), object: nil, queue: .main) { _ in
             pdfView.scaleFactor *= 1.25
@@ -397,7 +381,7 @@ struct ProgressBarView: View {
             
             // 下一句按钮
             Button(action: {
-                // 如果当前句���为空，说明是第一次朗读
+                // 如果当前句子为空，说明是第一次朗读
                 if sentenceManager.getCurrentSentence().isEmpty {
                     speechManager.speak()
                 } else {
