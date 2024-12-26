@@ -205,12 +205,17 @@ struct PDFViewerView: View {
     
     private func setupMenuCommandObservers() {
         // 句子导航命令
-        NotificationCenter.default.addObserver(forName: NSNotification.Name("NextSentence"), object: nil, queue: .main) { _ in
-            // 如果当前句子为空，说明是第一次朗读
-            if sentenceManager.getCurrentSentence().isEmpty {
-                speechManager.speak()
-            } else {
-                speechManager.speakNext()
+        NotificationCenter.default.addObserver(forName: NSNotification.Name("NextSentence"), object: nil, queue: .main) { [weak speechManager, weak sentenceManager] _ in
+            guard let speechManager = speechManager,
+                  let sentenceManager = sentenceManager else { return }
+            
+            Task { @MainActor in
+                // 如果当前句子为空，说明是第一次朗读
+                if sentenceManager.getCurrentSentence().isEmpty {
+                    speechManager.speak()
+                } else {
+                    speechManager.speakNext()
+                }
             }
         }
         
