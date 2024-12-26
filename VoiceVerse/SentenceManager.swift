@@ -107,14 +107,20 @@ final class SentenceManager: ObservableObject {
     
     // 将文本分割成句子
     private func splitIntoSentences(_ text: String) -> [String] {
-        // 定义句子分隔符
-        let separators = CharacterSet(charactersIn: "。！？\n")
+        // 定义句子结束符
+        let endPunctuations = CharacterSet(charactersIn: "。！？!?")
         var sentences: [String] = []
         var currentSentence = ""
         
-        for char in text {
+        // 规范化处理文本，移除多余的空白字符
+        let normalizedText = text.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        for char in normalizedText {
             currentSentence.append(char)
-            if CharacterSet(charactersIn: String(char)).isSubset(of: separators) {
+            
+            // 检查是否是句子结束符
+            if CharacterSet(charactersIn: String(char)).isSubset(of: endPunctuations) {
                 let trimmed = currentSentence.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !trimmed.isEmpty {
                     sentences.append(trimmed)
@@ -123,14 +129,14 @@ final class SentenceManager: ObservableObject {
             }
         }
         
-        // 处理最后一个句子
-        if !currentSentence.isEmpty {
-            let trimmed = currentSentence.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !trimmed.isEmpty {
-                sentences.append(trimmed)
-            }
+        // 处理最后一个句子（如果没有以标点符号结束）
+        let trimmed = currentSentence.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty {
+            // 如果最后一个句子没有标点，添加句号
+            sentences.append(trimmed + "。")
         }
         
-        return sentences
+        // 过滤掉空句子
+        return sentences.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     }
 } 
