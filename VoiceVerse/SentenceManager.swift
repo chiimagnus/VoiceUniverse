@@ -107,8 +107,8 @@ final class SentenceManager: ObservableObject {
     
     // 将文本分割成句子
     private func splitIntoSentences(_ text: String) -> [String] {
-        // 定义句子结束符
-        let endPunctuations = CharacterSet(charactersIn: "。！？!?")
+        // 定义句子分隔符，包括句号、问号、感叹号、逗号、分号、冒号等
+        let endPunctuations = CharacterSet(charactersIn: "。！？!?，,；;：:")
         var sentences: [String] = []
         var currentSentence = ""
         
@@ -119,7 +119,7 @@ final class SentenceManager: ObservableObject {
         for char in normalizedText {
             currentSentence.append(char)
             
-            // 检查是否是句子结束符
+            // 检查是否是句子分隔符
             if CharacterSet(charactersIn: String(char)).isSubset(of: endPunctuations) {
                 let trimmed = currentSentence.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !trimmed.isEmpty {
@@ -136,7 +136,7 @@ final class SentenceManager: ObservableObject {
             sentences.append(trimmed + "。")
         }
         
-        // 过滤掉空句子
+        // 过滤掉空句子，并确保每个句子都以标点符号结束
         return sentences.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     }
 } 
