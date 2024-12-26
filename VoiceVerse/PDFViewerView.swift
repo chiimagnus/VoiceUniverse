@@ -81,6 +81,7 @@ struct PDFViewerView: View {
     let sentenceManager: SentenceManager
     let speechManager: SpeechManager
     @StateObject private var highlightManager: HighlightManager
+    @StateObject private var textLocationManager = TextLocationManager()
     
     private let pdfView: PDFView
     
@@ -128,6 +129,17 @@ struct PDFViewerView: View {
             setupPDFView()
             setupMenuCommandObservers()
             setupCallbacks()
+            
+            // 设置当前文档
+            textLocationManager.setCurrentDocument(pdfDocument)
+        }
+        .onDisappear {
+            // 清理缓存
+            textLocationManager.clearCache()
+        }
+        // 监听文档变化（使用新的语法）
+        .onChange(of: pdfDocument) { oldValue, newValue in
+            textLocationManager.setCurrentDocument(newValue)
         }
     }
     
@@ -161,6 +173,18 @@ struct PDFViewerView: View {
             scrollView.backgroundColor = .clear
             scrollView.drawsBackground = false
             pdfView.backgroundColor = .clear
+            
+            // 在切换页面时清除位置缓存
+            NotificationCenter.default.addObserver(
+                forName: NSView.boundsDidChangeNotification,
+                object: scrollView.contentView,
+                queue: .main
+            ) { [weak textLocationManager] _ in
+                // 确保在主线程上调用
+                Task { @MainActor in
+                    textLocationManager?.clearSearchCache()
+                }
+            }
         }
         
         // 调整初始显示

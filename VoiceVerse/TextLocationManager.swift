@@ -76,6 +76,136 @@ class TextLocationManager: ObservableObject {
         }
     }
     
+    // 缓存配置
+    private struct CacheConfig {
+        static let maxCacheSize = 100          // 最大缓存条目数
+        static let cleanupThreshold = 80       // 清理阈值
+        static let maxAge: TimeInterval = 300  // 缓存最大年龄（秒）
+    }
+    
+    // 缓存条目结构
+    private struct CacheEntry {
+        let searchResult: SearchResult
+        let timestamp: Date
+        let pageIndex: Int
+        
+        var age: TimeInterval {
+            return Date().timeIntervalSince(timestamp)
+        }
+    }
+    
+    // 缓存键结构
+    private struct CacheKey: Hashable {
+        let text: String           // 搜索的文本
+        let pageIndex: Int         // 页面索引
+        let documentID: String     // 文档唯一标识
+        
+        func hash(into hasher: inout Hasher) {
+            hasher.combine(text)
+            hasher.combine(pageIndex)
+            hasher.combine(documentID)
+        }
+    }
+    
+    // 缓存存储
+    private var cache: [CacheKey: CacheEntry] = [:]
+    private var currentDocumentID: String = ""
+    
+    /// 从缓存中获取搜索结果
+    /// - Parameters:
+    ///   - segment: 文本片段
+    ///   - document: PDF文档
+    ///   - pageIndex: 页面索引
+    /// - Returns: 缓存的搜索结果（如果存在且有效）
+    private func getCachedResult(
+        for segment: TextSegment,
+        in document: PDFDocument,
+        pageIndex: Int
+    ) -> SearchResult? {
+        let key = CacheKey(
+            text: segment.text,
+            pageIndex: pageIndex,
+            documentID: currentDocumentID
+        )
+        
+        guard let entry = cache[key] else { return nil }
+        
+        // 检查缓存是否过期
+        if entry.age > CacheConfig.maxAge {
+            cache.removeValue(forKey: key)
+            return nil
+        }
+        
+        return entry.searchResult
+    }
+    
+    /// 将搜索结果添加到缓存
+    /// - Parameters:
+    ///   - result: 搜索结果
+    ///   - document: PDF文档
+    ///   - pageIndex: 页面索引
+    private func cacheResult(
+        _ result: SearchResult,
+        in document: PDFDocument,
+        pageIndex: Int
+    ) {
+        // 如果缓存已满，执行清理
+        if cache.count >= CacheConfig.maxCacheSize {
+            cleanCache()
+        }
+        
+        let key = CacheKey(
+            text: result.segment.text,
+            pageIndex: pageIndex,
+            documentID: currentDocumentID
+        )
+        
+        let entry = CacheEntry(
+            searchResult: result,
+            timestamp: Date(),
+            pageIndex: pageIndex
+        )
+        
+        cache[key] = entry
+    }
+    
+    /// 清理过期和过多的缓存条目
+    private func cleanCache() {
+        // 1. 删除过期条目
+        let now = Date()
+        cache = cache.filter { _, entry in
+            now.timeIntervalSince(entry.timestamp) <= CacheConfig.maxAge
+        }
+        
+        // 2. 如果仍然超过清理阈值，删除最旧的条目
+        if cache.count > CacheConfig.cleanupThreshold {
+            let sortedEntries = cache.sorted { $0.value.timestamp > $1.value.timestamp }
+            let entriesToKeep = sortedEntries.prefix(CacheConfig.cleanupThreshold)
+            cache = Dictionary(uniqueKeysWithValues: entriesToKeep.map { ($0.key, $0.value) })
+        }
+    }
+    
+    /// 设置当前文档ID
+    /// - Parameter document: PDF文档
+    func setCurrentDocument(_ document: PDFDocument) {
+        // 使用文档的唯一标识（如果有）或生成一个新的
+        if let documentURL = document.documentURL?.absoluteString {
+            currentDocumentID = documentURL
+        } else {
+            // 如果没有URL，使用文档的哈希值作为ID
+            currentDocumentID = String(document.hashValue)
+        }
+        
+        // 清除旧文档的缓存
+        clearCache()
+    }
+    
+    /// 清除所有缓存
+    func clearCache() {
+        cache.removeAll()
+        clearSearchCache() // 同时清除搜索缓存
+    }
+    
     /// 将文本分段并选择关键位置
     /// - Parameter text: 需要分段的原始文本
     /// - Returns: 选择的关键文本片段数组
@@ -183,6 +313,27 @@ class TextLocationManager: ObservableObject {
     ///   - currentPage: 当前页面
     /// - Returns: 搜索结果
     func searchSegment(_ segment: TextSegment, in document: PDFDocument, currentPage: PDFPage) async -> SearchResult? {
+        let currentPageIndex = document.index(for: currentPage)
+        
+        // 1. 尝试从缓存获取结果
+        if let cachedResult = getCachedResult(for: segment, in: document, pageIndex: currentPageIndex) {
+            lastSearchPage = cachedResult.page
+            lastSearchLocation = cachedResult.bounds.origin
+            return cachedResult
+        }
+        
+        // 2. 如果缓存中没有，执行实际搜索
+        if let result = await performSearch(segment, in: document, currentPage: currentPage) {
+            // 3. 将结果添加到缓存
+            cacheResult(result, in: document, pageIndex: currentPageIndex)
+            return result
+        }
+        
+        return nil
+    }
+    
+    /// 执行实际的搜索操作（将原来 searchSegment 的搜索逻辑移到这里）
+    private func performSearch(_ segment: TextSegment, in document: PDFDocument, currentPage: PDFPage) async -> SearchResult? {
         // 1. 首先在当前页面搜索
         if let result = searchInPage(segment, page: currentPage) {
             lastSearchPage = currentPage
