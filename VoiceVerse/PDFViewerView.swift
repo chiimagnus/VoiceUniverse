@@ -204,6 +204,16 @@ struct PDFViewerView: View {
     }
     
     private func setupMenuCommandObservers() {
+        // 句子导航命令
+        NotificationCenter.default.addObserver(forName: NSNotification.Name("NextSentence"), object: nil, queue: .main) { _ in
+            // 如果当前句子为空，说明是第一次朗读
+            if sentenceManager.getCurrentSentence().isEmpty {
+                speechManager.speak()
+            } else {
+                speechManager.speakNext()
+            }
+        }
+        
         // 缩放命令
         NotificationCenter.default.addObserver(forName: NSNotification.Name("ZoomIn"), object: nil, queue: .main) { _ in
             pdfView.scaleFactor *= 1.25

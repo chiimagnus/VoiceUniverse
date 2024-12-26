@@ -44,6 +44,14 @@ struct VoiceVerseApp: App {
                 
                 Divider()
                 
+                // 句子导航
+                Button("下一句") {
+                    NotificationCenter.default.post(name: NSNotification.Name("NextSentence"), object: nil)
+                }
+                .keyboardShortcut(.downArrow, modifiers: .command)
+                
+                Divider()
+                
                 // 页面显示模式
                 Button("单页") {
                     NotificationCenter.default.post(name: NSNotification.Name("SinglePage"), object: nil)
