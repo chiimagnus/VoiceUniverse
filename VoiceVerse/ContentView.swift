@@ -89,13 +89,6 @@ struct ContentView: View {
                                 )
                             }
                             .help(speechManager.isPlaying ? "暂停朗读" : "继续朗读")
-                            
-                            Button(action: {
-                                speechManager.stop()
-                            }) {
-                                Label("停止", systemImage: "stop.fill")
-                            }
-                            .help("停止朗读")
                         }
                     }
                 }
