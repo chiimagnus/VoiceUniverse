@@ -73,12 +73,14 @@ struct ContentView: View {
                             Button(action: {
                                 if speechManager.isPlaying {
                                     speechManager.pause()
-                                } else if let currentPage = pdfDocument.page(at: 0),
-                                          let pageText = currentPage.string {
-                                    if sentenceManager.getCurrentSentence().isEmpty {
+                                } else {
+                                    if !sentenceManager.getCurrentSentence().isEmpty {
+                                        speechManager.resume()
+                                    } else if let currentPage = pdfDocument.page(at: 0),
+                                              let pageText = currentPage.string {
                                         sentenceManager.setText(pageText, pageIndex: 0)
+                                        speechManager.speak()
                                     }
-                                    speechManager.speak()
                                 }
                             }) {
                                 Label(

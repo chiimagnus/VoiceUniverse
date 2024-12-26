@@ -54,14 +54,21 @@ final class SpeechManager: NSObject, ObservableObject {
     }
     
     func pause() {
-        synthesizer.pauseSpeaking(at: .word)
+        print("⏸️ Pausing speech")
+        synthesizer.pauseSpeaking(at: .immediate)
         isPlaying = false
     }
     
     func resume() {
+        print("▶️ Resuming speech")
         if synthesizer.isPaused {
             synthesizer.continueSpeaking()
             isPlaying = true
+        } else {
+            // 如果不是暂停状态，可能需要重新开始朗读当前句子
+            if !sentenceManager.getCurrentSentence().isEmpty {
+                speakSentence(sentenceManager.getCurrentSentence())
+            }
         }
     }
     
