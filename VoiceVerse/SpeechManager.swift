@@ -4,7 +4,7 @@ import AVFoundation
 @MainActor
 final class SpeechManager: NSObject, ObservableObject {
     @Published var isPlaying = false
-    private let synthesizer = AVSpeechSynthesizer()
+    let synthesizer = AVSpeechSynthesizer()
     private let sentenceManager: SentenceManager
     var isUserInitiated = false
     

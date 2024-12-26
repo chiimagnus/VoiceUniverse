@@ -1,5 +1,6 @@
 import SwiftUI
 import PDFKit
+import AVFoundation
 
 struct PDFKitView: NSViewRepresentable {
     let pdfView: PDFView
@@ -396,7 +397,7 @@ struct ProgressBarView: View {
             
             // 下一句按钮
             Button(action: {
-                // 如果当前句子为空，说明是第一次朗读
+                // 如果当前句���为空，说明是第一次朗读
                 if sentenceManager.getCurrentSentence().isEmpty {
                     speechManager.speak()
                 } else {
@@ -439,11 +440,15 @@ struct ProgressBarView: View {
     
     // 跳转到当前页面的指定句子
     private func jumpToSentence(_ sentenceIndex: Int) {
+        print("🎯 Jumping to sentence \(sentenceIndex)")
         // 停止当前朗读
         speechManager.stop()
         
         // 重置到开始位置
         sentenceManager.reset()
+        
+        // 标记为手动模式，防止自动朗读下一句
+        speechManager.isUserInitiated = true
         
         // 跳转到指定句子
         for _ in 0..<sentenceIndex {
@@ -451,7 +456,16 @@ struct ProgressBarView: View {
         }
         
         // 开始朗读
-        speechManager.speak()
+        if let nextSentence = sentenceManager.nextSentence() {
+            // 使用 speakSentence 直接朗读，而不是使用 speak()
+            let utterance = AVSpeechUtterance(string: nextSentence)
+            utterance.voice = AVSpeechSynthesisVoice(language: "zh-CN")
+            utterance.rate = 0.5
+            utterance.pitchMultiplier = 1.0
+            utterance.volume = 1.0
+            speechManager.synthesizer.speak(utterance)
+            speechManager.isPlaying = true
+        }
     }
 }
 
