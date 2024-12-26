@@ -48,7 +48,7 @@ struct VoiceVerseApp: App {
                 Button("下一句") {
                     NotificationCenter.default.post(name: NSNotification.Name("NextSentence"), object: nil)
                 }
-                .keyboardShortcut(.downArrow, modifiers: .command)
+                .keyboardShortcut(.rightArrow, modifiers: [])
                 
                 Divider()
                 
