@@ -173,18 +173,6 @@ struct PDFViewerView: View {
             scrollView.backgroundColor = .clear
             scrollView.drawsBackground = false
             pdfView.backgroundColor = .clear
-            
-            // 在切换页面时清除位置缓存
-            NotificationCenter.default.addObserver(
-                forName: NSView.boundsDidChangeNotification,
-                object: scrollView.contentView,
-                queue: .main
-            ) { [weak textLocationManager] _ in
-                // 确保在主线程上调用
-                Task { @MainActor in
-                    textLocationManager?.clearSearchCache()
-                }
-            }
         }
         
         // 调整初始显示
@@ -196,6 +184,20 @@ struct PDFViewerView: View {
             // 滚动到文档开始
             if let firstPage = pdfView.document?.page(at: 0) {
                 pdfView.go(to: PDFDestination(page: firstPage, at: NSPoint(x: 0, y: firstPage.bounds(for: .mediaBox).height)))
+            }
+        }
+        
+        // 在切换页面时清除位置缓存
+        if let scrollView = pdfView.documentView?.enclosingScrollView {
+            NotificationCenter.default.addObserver(
+                forName: NSView.boundsDidChangeNotification,
+                object: scrollView.contentView,
+                queue: .main
+            ) { [weak textLocationManager] _ in
+                // 确保在主线程上调用
+                Task { @MainActor in
+                    textLocationManager?.clearSearchCache()
+                }
             }
         }
     }
