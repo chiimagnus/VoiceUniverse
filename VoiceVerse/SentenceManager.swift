@@ -69,6 +69,7 @@ final class SentenceManager: ObservableObject {
         isLastSentence = currentSentenceIndex == currentPageSentences.count - 1
         print("Next sentence [\(currentSentenceIndex + 1)/\(currentPageSentences.count)] on page \(currentPageIndex): \(currentSentence)")
         
+        // 触发句子变化回调，这会导致高亮更新
         onNextSentence?(currentSentence)
         return currentSentence
     }

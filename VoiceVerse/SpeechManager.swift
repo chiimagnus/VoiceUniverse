@@ -61,6 +61,20 @@ final class SpeechManager: NSObject, ObservableObject {
             isPlaying = true
         }
     }
+    
+    // 朗读下一句
+    func speakNext() {
+        // 如果当前正在朗读，先停止
+        if isPlaying {
+            synthesizer.stopSpeaking(at: .immediate)
+        }
+        
+        // 获取并朗读下一句
+        if let nextSentence = sentenceManager.nextSentence() {
+            // 直接朗读当前句子
+            speakSentence(nextSentence)
+        }
+    }
 }
 
 extension SpeechManager: AVSpeechSynthesizerDelegate {

@@ -362,7 +362,12 @@ struct ProgressBarView: View {
             
             // 下一句按钮
             Button(action: {
-                speechManager.speak()
+                // 如果当前句子为空，说明是第一次朗读
+                if sentenceManager.getCurrentSentence().isEmpty {
+                    speechManager.speak()
+                } else {
+                    speechManager.speakNext()
+                }
             }) {
                 Text("下一句")
             }
