@@ -27,8 +27,9 @@ final class SentenceManager: ObservableObject {
         if currentPageIndex != pageIndex {
             switchToPage(pageIndex)
         } else {
-            // 如果是当前页面，只更新句子
+            // 如果是当前页面，更新句子并重置状态
             updateCurrentPage(pageIndex)
+            reset()  // 确保重置状态
         }
         
         hasText = !pagesSentences.isEmpty
@@ -46,6 +47,17 @@ final class SentenceManager: ObservableObject {
     func nextSentence() -> String? {
         guard !currentPageSentences.isEmpty else { return nil }
         
+        // 如果是第一次调用（currentSentenceIndex == -1），直接返回第一句
+        if currentSentenceIndex == -1 {
+            currentSentenceIndex = 0
+            currentSentence = currentPageSentences[currentSentenceIndex]
+            isLastSentence = currentPageSentences.count == 1
+            print("First sentence [\(currentSentenceIndex + 1)/\(currentPageSentences.count)] on page \(currentPageIndex): \(currentSentence)")
+            onNextSentence?(currentSentence)
+            return currentSentence
+        }
+        
+        // 否则移动到下一句
         currentSentenceIndex += 1
         if currentSentenceIndex >= currentPageSentences.count {
             currentSentenceIndex = currentPageSentences.count - 1

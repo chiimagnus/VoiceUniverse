@@ -76,7 +76,6 @@ struct ContentView: View {
                                 } else if let currentPage = pdfDocument.page(at: 0),
                                           let pageText = currentPage.string {
                                     if sentenceManager.getCurrentSentence().isEmpty {
-                                        // 从当前页面开始朗读
                                         sentenceManager.setText(pageText, pageIndex: 0)
                                     }
                                     speechManager.speak()
