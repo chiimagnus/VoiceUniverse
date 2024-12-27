@@ -520,10 +520,10 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.ChiiMagnus.VoiceVerseUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = macosx;
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
 				TEST_TARGET_NAME = VoiceVerse;
 				XROS_DEPLOYMENT_TARGET = 2.1;
 			};
@@ -542,10 +542,10 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.ChiiMagnus.VoiceVerseUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = macosx;
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
 				TEST_TARGET_NAME = VoiceVerse;
 				XROS_DEPLOYMENT_TARGET = 2.1;
 			};
