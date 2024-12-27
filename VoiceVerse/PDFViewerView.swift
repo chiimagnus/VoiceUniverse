@@ -69,7 +69,6 @@ struct PDFKitView: NSViewRepresentable {
                       let pageText = page.string,
                       let pageIndex = pdfView.document?.index(for: page) else { return }
                 
-                // 不需要在这里自己分割，使用 SentenceManager 来处理
                 parent.sentenceManager.setText(pageText, pageIndex: pageIndex)  // 让 SentenceManager 处理文本分割
                 parent.speechManager.speak()  // 开始朗读第一个句子
             }
@@ -335,9 +334,7 @@ struct ProgressBarView: View {
     // 定义文本位置枚举
     private enum TextPosition {
         case visible       // 在可视区域内
-        case above        // 在可视区域上方
-        case below        // 在可视区域下方
-        case otherPage    // 在其他页面
+        case outOfView    // 不在可视区域
     }
     
     var body: some View {
@@ -356,7 +353,7 @@ struct ProgressBarView: View {
                     isPresented: $showingPageDialog,
                     totalPages: totalPages,
                     onJump: { pageNumber in
-                        jumpToPage(pageNumber - 1)  // 转换为0基索引
+                        jumpToPage(pageNumber - 1)
                     }
                 )
                 .frame(width: 300, height: 150)
@@ -376,7 +373,7 @@ struct ProgressBarView: View {
                     isPresented: $showingSentenceDialog,
                     totalSentences: sentenceManager.getCurrentPageSentenceCount(),
                     onJump: { sentenceNumber in
-                        jumpToSentence(sentenceNumber - 1)  // 转换为0基索引
+                        jumpToSentence(sentenceNumber - 1)
                     }
                 )
                 .frame(width: 300, height: 150)
@@ -398,26 +395,10 @@ struct ProgressBarView: View {
             }
             .frame(height: 4)
             
-            // 根据文本位置显示相应的跳转按钮
-            if currentTextPosition == .above {
+            // 跳转按钮
+            if currentTextPosition == .outOfView {
                 Button(action: {
-                    scrollToCurrentPlayingPosition(direction: .up)
-                }) {
-                    Text("⬆️回到当前播放位置")
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 8)
-            } else if currentTextPosition == .below {
-                Button(action: {
-                    scrollToCurrentPlayingPosition(direction: .down)
-                }) {
-                    Text("⬇️回到当前播放位置")
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 8)
-            } else if currentTextPosition == .otherPage {
-                Button(action: {
-                    scrollToCurrentPlayingPosition(direction: .up)
+                    scrollToCurrentPlayingPosition()
                 }) {
                     Text("↗️跳转到当前播放位置")
                 }
@@ -440,15 +421,36 @@ struct ProgressBarView: View {
         }
         .padding(.horizontal)
         .onAppear {
-            // 启动定时器检查文本位置
-            startPositionCheck()
+            setupScrollObserver()
+            // 初始检查一次位置
+            checkCurrentTextPosition()
+        }
+        .onDisappear {
+            // 移除观察者
+            if let scrollView = pdfView.documentView?.enclosingScrollView {
+                NotificationCenter.default.removeObserver(scrollView.contentView as Any,
+                                                       name: NSView.boundsDidChangeNotification,
+                                                       object: nil)
+            }
         }
     }
     
-    // 启动定时器检查文本位置
-    private func startPositionCheck() {
-        Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
-            checkCurrentTextPosition()
+    // 计算当前进度
+    private var progress: Double {
+        guard sentenceManager.getCurrentPageSentenceCount() > 0 else { return 0 }
+        return Double(sentenceManager.getCurrentSentenceNumber()) / Double(sentenceManager.getCurrentPageSentenceCount())
+    }
+    
+    // 设置滚动观察者
+    private func setupScrollObserver() {
+        if let scrollView = pdfView.documentView?.enclosingScrollView {
+            NotificationCenter.default.addObserver(
+                forName: NSView.boundsDidChangeNotification,
+                object: scrollView.contentView,
+                queue: .main
+            ) { notification in
+                checkCurrentTextPosition()
+            }
         }
     }
     
@@ -471,7 +473,7 @@ struct ProgressBarView: View {
         
         // 检查文本是否在当前页面
         if currentPage.pageRef?.pageNumber != sentenceManager.currentPageIndex + 1 {
-            currentTextPosition = .otherPage
+            currentTextPosition = .outOfView
             return
         }
         
@@ -485,38 +487,36 @@ struct ProgressBarView: View {
         
         // 检查文本框是否在可视区域内
         let textRect = searchResult.bounds
-        if textRect.maxY < visibleRect.minY {
-            currentTextPosition = .above
-        } else if textRect.minY > visibleRect.maxY {
-            currentTextPosition = .below
+        if textRect.maxY < visibleRect.minY || textRect.minY > visibleRect.maxY {
+            currentTextPosition = .outOfView
         } else {
             currentTextPosition = .visible
         }
     }
     
     // 滚动到当前播放位置
-    private func scrollToCurrentPlayingPosition(direction: ScrollDirection) {
+    private func scrollToCurrentPlayingPosition() {
         let currentSentence = sentenceManager.getCurrentSentence()
         guard !currentSentence.isEmpty else { return }
         
         // 如果在其他页面，先跳转到正确的页面
-        if currentTextPosition == .otherPage {
+        if pdfView.currentPage?.pageRef?.pageNumber != sentenceManager.currentPageIndex + 1 {
             guard let page = pdfDocument.page(at: sentenceManager.currentPageIndex) else { return }
             pdfView.go(to: page)
             
             // 等待页面加载完成后再滚动到具体位置
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                scrollToSentence(currentSentence, direction: direction)
+                scrollToSentence(currentSentence)
             }
             return
         }
         
         // 在当前页面内滚动
-        scrollToSentence(currentSentence, direction: direction)
+        scrollToSentence(currentSentence)
     }
     
     // 滚动到指定句子
-    private func scrollToSentence(_ sentence: String, direction: ScrollDirection) {
+    private func scrollToSentence(_ sentence: String) {
         guard let currentPage = pdfView.currentPage else { return }
         
         let segments = textLocationManager.segmentText(sentence)
@@ -525,32 +525,15 @@ struct ProgressBarView: View {
             // 计算目标位置
             var point = searchResult.bounds.origin
             if let scrollView = pdfView.documentView?.enclosingScrollView {
-                // 计算偏移量，根据方向决定位置
+                // 计算偏移量，使句子位于视图中间偏上的位置
                 let visibleHeight = scrollView.documentVisibleRect.height
-                switch direction {
-                case .up:
-                    point.y = searchResult.bounds.maxY + (visibleHeight * 0.3)
-                case .down:
-                    point.y = searchResult.bounds.maxY - (visibleHeight * 0.3)
-                }
+                point.y = searchResult.bounds.maxY + (visibleHeight * 0.3)
             }
             
             // 滚动到目标位置
             let destination = PDFDestination(page: currentPage, at: point)
             pdfView.go(to: destination)
         }
-    }
-    
-    // 定义滚动方向
-    private enum ScrollDirection {
-        case up
-        case down
-    }
-    
-    // 计算当前进度
-    private var progress: Double {
-        guard sentenceManager.getCurrentPageSentenceCount() > 0 else { return 0 }
-        return Double(sentenceManager.getCurrentSentenceNumber()) / Double(sentenceManager.getCurrentPageSentenceCount())
     }
     
     // 跳转到指定页面
