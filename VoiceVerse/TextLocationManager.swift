@@ -312,7 +312,7 @@ class TextLocationManager: ObservableObject {
     ///   - document: PDF文档
     ///   - currentPage: 当前页面
     /// - Returns: 搜索结果
-    func searchSegment(_ segment: TextSegment, in document: PDFDocument, currentPage: PDFPage) async -> SearchResult? {
+    func searchSegment(_ segment: TextSegment, in document: PDFDocument, currentPage: PDFPage) -> SearchResult? {
         let currentPageIndex = document.index(for: currentPage)
         
         // 1. 尝试从缓存获取结果
@@ -323,7 +323,7 @@ class TextLocationManager: ObservableObject {
         }
         
         // 2. 如果缓存中没有，执行实际搜索
-        if let result = await performSearch(segment, in: document, currentPage: currentPage) {
+        if let result = performSearch(segment, in: document, currentPage: currentPage) {
             // 3. 将结果添加到缓存
             cacheResult(result, in: document, pageIndex: currentPageIndex)
             return result
@@ -332,8 +332,8 @@ class TextLocationManager: ObservableObject {
         return nil
     }
     
-    /// 执行实际的搜索操作（将原来 searchSegment 的搜索逻辑移到这里）
-    private func performSearch(_ segment: TextSegment, in document: PDFDocument, currentPage: PDFPage) async -> SearchResult? {
+    /// 执行实际的搜索操作
+    private func performSearch(_ segment: TextSegment, in document: PDFDocument, currentPage: PDFPage) -> SearchResult? {
         // 1. 首先在当前页面搜索
         if let result = searchInPage(segment, page: currentPage) {
             lastSearchPage = currentPage

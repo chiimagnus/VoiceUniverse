@@ -3,7 +3,7 @@ import AppKit
 
 @MainActor
 class HighlightManager: ObservableObject {
-    private let pdfView: PDFView
+    private var pdfView: PDFView
     private let sentenceManager: SentenceManager
     private var currentAnnotation: PDFAnnotation?
     private var lastHighlightedText: String = ""
@@ -18,6 +18,10 @@ class HighlightManager: ObservableObject {
         sentenceManager.onNextSentence = { [weak self] sentence in
             self?.highlightSentence(sentence)
         }
+    }
+    
+    func updatePDFView(_ newPDFView: PDFView) {
+        self.pdfView = newPDFView
     }
     
     func highlightCurrentSentence() {

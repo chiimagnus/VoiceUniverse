@@ -69,7 +69,7 @@ struct PDFKitView: NSViewRepresentable {
                       let pageText = page.string,
                       let pageIndex = pdfView.document?.index(for: page) else { return }
                 
-                // 不需要在这里自己分割句子，应该使用 SentenceManager 来处理
+                // 不需要在这里自己分割，使用 SentenceManager 来处理
                 parent.sentenceManager.setText(pageText, pageIndex: pageIndex)  // 让 SentenceManager 处理文本分割
                 parent.speechManager.speak()  // 开始朗读第一个句子
             }
@@ -83,8 +83,7 @@ struct PDFViewerView: View {
     let speechManager: SpeechManager
     @StateObject private var highlightManager: HighlightManager
     @StateObject private var textLocationManager = TextLocationManager()
-    
-    private let pdfView: PDFView
+    @State private var pdfView = PDFView()
     
     init(pdfDocument: PDFDocument, 
          sentenceManager: SentenceManager,
@@ -93,14 +92,8 @@ struct PDFViewerView: View {
         self.sentenceManager = sentenceManager
         self.speechManager = speechManager
         
-        let pdfView = PDFView()
-        self.pdfView = pdfView
-        
-        // 先设置 PDF 文档
-        pdfView.document = pdfDocument
-        
-        // 然后创建 highlightManager
-        let highlightManager = HighlightManager(pdfView: pdfView, sentenceManager: sentenceManager)
+        // 创建 highlightManager
+        let highlightManager = HighlightManager(pdfView: PDFView(), sentenceManager: sentenceManager)
         _highlightManager = StateObject(wrappedValue: highlightManager)
     }
     
@@ -121,12 +114,19 @@ struct PDFViewerView: View {
                 totalPages: pdfDocument.pageCount,
                 pdfView: pdfView,
                 speechManager: speechManager,
-                pdfDocument: pdfDocument
+                pdfDocument: pdfDocument,
+                textLocationManager: textLocationManager
             )
             .frame(height: 40)
             .background(.ultraThinMaterial)
         }
         .onAppear {
+            // 设置 PDF 文档
+            pdfView.document = pdfDocument
+            
+            // 更新 highlightManager 的 pdfView
+            highlightManager.updatePDFView(pdfView)
+            
             setupPDFView()
             setupMenuCommandObservers()
             setupCallbacks()
@@ -140,6 +140,7 @@ struct PDFViewerView: View {
         }
         // 监听文档变化（使用新的语法）
         .onChange(of: pdfDocument) { oldValue, newValue in
+            pdfView.document = newValue
             textLocationManager.setCurrentDocument(newValue)
         }
     }
@@ -185,20 +186,6 @@ struct PDFViewerView: View {
             // 滚动到文档开始
             if let firstPage = pdfView.document?.page(at: 0) {
                 pdfView.go(to: PDFDestination(page: firstPage, at: NSPoint(x: 0, y: firstPage.bounds(for: .mediaBox).height)))
-            }
-        }
-        
-        // 在切换页面时清除位置缓存
-        if let scrollView = pdfView.documentView?.enclosingScrollView {
-            NotificationCenter.default.addObserver(
-                forName: NSView.boundsDidChangeNotification,
-                object: scrollView.contentView,
-                queue: .main
-            ) { [weak textLocationManager] _ in
-                // 确保在主线程上调用
-                Task { @MainActor in
-                    textLocationManager?.clearSearchCache()
-                }
             }
         }
     }
@@ -317,7 +304,7 @@ struct PDFViewerView: View {
             highlightManager.highlightSentence("")  // 清除高亮
         }
         
-        // 当句子改变时更新高亮
+        // 句子改变时更新高亮
         sentenceManager.onNextSentence = { [highlightManager] sentence in
             highlightManager.highlightSentence(sentence)
         }
@@ -331,6 +318,7 @@ struct ProgressBarView: View {
     let pdfView: PDFView
     let speechManager: SpeechManager
     let pdfDocument: PDFDocument
+    let textLocationManager: TextLocationManager
     
     @State private var showingPageDialog = false
     @State private var showingSentenceDialog = false
@@ -425,15 +413,36 @@ struct ProgressBarView: View {
         // 停止当前朗读
         speechManager.stop()
         
-        // 切换到目标页面
-        pdfView.go(to: page)
-        
         // 设置新页面的文本
         sentenceManager.setText(pageText, pageIndex: pageIndex)
         
-        // 开始朗读
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        // 导航到页面
+        pdfView.go(to: page)
+        
+        // 延迟执行滚动和朗读
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            // 开始朗读
             speechManager.speak()
+            
+            // 获取当前句子并滚动到相应位置
+            let currentSentence = sentenceManager.getCurrentSentence()
+            if !currentSentence.isEmpty {
+                let segments = textLocationManager.segmentText(currentSentence)
+                if let firstSegment = segments.first,
+                   let searchResult = textLocationManager.searchSegment(firstSegment, in: pdfDocument, currentPage: page) {
+                    // 计算目标位置
+                    var point = searchResult.bounds.origin
+                    if let scrollView = pdfView.documentView?.enclosingScrollView {
+                        // 计算偏移量，使句子位于视图中间
+                        let visibleHeight = scrollView.documentVisibleRect.height
+                        point.y = searchResult.bounds.maxY + (visibleHeight * 0.3)
+                    }
+                    
+                    // 滚动到目标位置
+                    let destination = PDFDestination(page: page, at: point)
+                    pdfView.go(to: destination)
+                }
+            }
         }
     }
     
@@ -454,9 +463,9 @@ struct ProgressBarView: View {
             _ = sentenceManager.nextSentence()
         }
         
-        // 开始朗读
+        // 开始朗读并确保滚动到句子位置
         if let nextSentence = sentenceManager.nextSentence() {
-            // 使用 speakSentence 直接朗读，而不是使用 speak()
+            // 使用 speakSentence 直接朗读
             let utterance = AVSpeechUtterance(string: nextSentence)
             utterance.voice = AVSpeechSynthesisVoice(language: "zh-CN")
             utterance.rate = 0.5
@@ -464,6 +473,27 @@ struct ProgressBarView: View {
             utterance.volume = 1.0
             speechManager.synthesizer.speak(utterance)
             speechManager.isPlaying = true
+            
+            // 延迟执行滚动
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                if let currentPage = pdfView.currentPage {
+                    let segments = textLocationManager.segmentText(nextSentence)
+                    if let firstSegment = segments.first,
+                       let searchResult = textLocationManager.searchSegment(firstSegment, in: pdfDocument, currentPage: currentPage) {
+                        // 计算目标位置
+                        var point = searchResult.bounds.origin
+                        if let scrollView = pdfView.documentView?.enclosingScrollView {
+                            // 计算偏移量，使句子位于视图中间
+                            let visibleHeight = scrollView.documentVisibleRect.height
+                            point.y = searchResult.bounds.maxY + (visibleHeight * 0.3)
+                        }
+                        
+                        // 滚动到目标位置
+                        let destination = PDFDestination(page: currentPage, at: point)
+                        pdfView.go(to: destination)
+                    }
+                }
+            }
         }
     }
 }
