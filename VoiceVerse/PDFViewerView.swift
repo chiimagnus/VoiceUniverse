@@ -92,9 +92,16 @@ struct PDFViewerView: View {
         self.sentenceManager = sentenceManager
         self.speechManager = speechManager
         
-        // 创建 highlightManager
-        let highlightManager = HighlightManager(pdfView: PDFView(), sentenceManager: sentenceManager)
+        // 先创建 PDFView
+        let pdfView = PDFView()
+        pdfView.document = pdfDocument
+        
+        // 使用同一个 pdfView 实例创建 highlightManager
+        let highlightManager = HighlightManager(pdfView: pdfView, sentenceManager: sentenceManager)
         _highlightManager = StateObject(wrappedValue: highlightManager)
+        
+        // 设置 @State pdfView 的初始值
+        _pdfView = State(initialValue: pdfView)
     }
     
     var body: some View {
