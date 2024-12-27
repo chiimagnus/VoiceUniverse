@@ -11,8 +11,8 @@ VoiceVerse is a PDF reader for macOS that supports *text-to-speech* and *PDF hig
 ## 1. Features
 - 🎯 Auto-highlighting of spoken text🌟
 - 🔊 Text-to-speech
-- 🔍 Text navigation
 - ⌨️ Keyboard shortcuts
+- 📍 Smart positioning of current reading location🌟
 - [ ] Voice API integration
 
 ## 2. Usage Guide
