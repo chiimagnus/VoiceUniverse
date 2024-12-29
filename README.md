@@ -3,7 +3,7 @@
 </h1>
 
 <div align="center">
-    <a href="readme.md">中文</a> | <a href="readme_en.md">English</a>
+    <a href="README.md">中文</a> | <a href="README_EN.md">English</a>
 </div>
 
 VoiceVerse是一款macOS平台的PDF阅读器，能够*文本朗读*和*PDF高亮*。
