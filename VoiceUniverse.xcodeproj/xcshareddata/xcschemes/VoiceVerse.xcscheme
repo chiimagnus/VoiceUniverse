@@ -16,9 +16,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "D834D07E2D16BEC700852AF8"
-               BuildableName = "VoiceVerse.app"
-               BlueprintName = "VoiceVerse"
-               ReferencedContainer = "container:VoiceVerse.xcodeproj">
+               BuildableName = "VoiceUniverse.app"
+               BlueprintName = "VoiceUniverse"
+               ReferencedContainer = "container:VoiceUniverse.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -36,9 +36,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "D834D08F2D16BEC800852AF8"
-               BuildableName = "VoiceVerseTests.xctest"
-               BlueprintName = "VoiceVerseTests"
-               ReferencedContainer = "container:VoiceVerse.xcodeproj">
+               BuildableName = "VoiceUniverseTests.xctest"
+               BlueprintName = "VoiceUniverseTests"
+               ReferencedContainer = "container:VoiceUniverse.xcodeproj">
             </BuildableReference>
          </TestableReference>
          <TestableReference
@@ -47,9 +47,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "D834D0992D16BEC800852AF8"
-               BuildableName = "VoiceVerseUITests.xctest"
-               BlueprintName = "VoiceVerseUITests"
-               ReferencedContainer = "container:VoiceVerse.xcodeproj">
+               BuildableName = "VoiceUniverseUITests.xctest"
+               BlueprintName = "VoiceUniverseUITests"
+               ReferencedContainer = "container:VoiceUniverse.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -69,9 +69,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "D834D07E2D16BEC700852AF8"
-            BuildableName = "VoiceVerse.app"
-            BlueprintName = "VoiceVerse"
-            ReferencedContainer = "container:VoiceVerse.xcodeproj">
+            BuildableName = "VoiceUniverse.app"
+            BlueprintName = "VoiceUniverse"
+            ReferencedContainer = "container:VoiceUniverse.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -86,9 +86,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "D834D07E2D16BEC700852AF8"
-            BuildableName = "VoiceVerse.app"
-            BlueprintName = "VoiceVerse"
-            ReferencedContainer = "container:VoiceVerse.xcodeproj">
+            BuildableName = "VoiceUniverse.app"
+            BlueprintName = "VoiceUniverse"
+            ReferencedContainer = "container:VoiceUniverse.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

@@ -24,9 +24,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		D834D07F2D16BEC700852AF8 /* VoiceVerse.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VoiceVerse.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		D834D0902D16BEC800852AF8 /* VoiceVerseTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoiceVerseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		D834D09A2D16BEC800852AF8 /* VoiceVerseUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoiceVerseUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D834D07F2D16BEC700852AF8 /* VoiceUniverse.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VoiceUniverse.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D834D0902D16BEC800852AF8 /* VoiceUniverseTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoiceUniverseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D834D09A2D16BEC800852AF8 /* VoiceUniverseUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoiceUniverseUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -85,9 +85,9 @@
 		D834D0802D16BEC700852AF8 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				D834D07F2D16BEC700852AF8 /* VoiceVerse.app */,
-				D834D0902D16BEC800852AF8 /* VoiceVerseTests.xctest */,
-				D834D09A2D16BEC800852AF8 /* VoiceVerseUITests.xctest */,
+				D834D07F2D16BEC700852AF8 /* VoiceUniverse.app */,
+				D834D0902D16BEC800852AF8 /* VoiceUniverseTests.xctest */,
+				D834D09A2D16BEC800852AF8 /* VoiceUniverseUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,9 +95,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		D834D07E2D16BEC700852AF8 /* VoiceVerse */ = {
+		D834D07E2D16BEC700852AF8 /* VoiceUniverse */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D834D0A42D16BEC800852AF8 /* Build configuration list for PBXNativeTarget "VoiceVerse" */;
+			buildConfigurationList = D834D0A42D16BEC800852AF8 /* Build configuration list for PBXNativeTarget "VoiceUniverse" */;
 			buildPhases = (
 				D834D07B2D16BEC700852AF8 /* Sources */,
 				D834D07C2D16BEC700852AF8 /* Frameworks */,
@@ -110,16 +110,16 @@
 			fileSystemSynchronizedGroups = (
 				D834D0812D16BEC700852AF8 /* VoiceVerse */,
 			);
-			name = VoiceVerse;
+			name = VoiceUniverse;
 			packageProductDependencies = (
 			);
 			productName = VoiceVerse;
-			productReference = D834D07F2D16BEC700852AF8 /* VoiceVerse.app */;
+			productReference = D834D07F2D16BEC700852AF8 /* VoiceUniverse.app */;
 			productType = "com.apple.product-type.application";
 		};
-		D834D08F2D16BEC800852AF8 /* VoiceVerseTests */ = {
+		D834D08F2D16BEC800852AF8 /* VoiceUniverseTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D834D0A72D16BEC800852AF8 /* Build configuration list for PBXNativeTarget "VoiceVerseTests" */;
+			buildConfigurationList = D834D0A72D16BEC800852AF8 /* Build configuration list for PBXNativeTarget "VoiceUniverseTests" */;
 			buildPhases = (
 				D834D08C2D16BEC800852AF8 /* Sources */,
 				D834D08D2D16BEC800852AF8 /* Frameworks */,
@@ -133,16 +133,16 @@
 			fileSystemSynchronizedGroups = (
 				D834D0932D16BEC800852AF8 /* VoiceVerseTests */,
 			);
-			name = VoiceVerseTests;
+			name = VoiceUniverseTests;
 			packageProductDependencies = (
 			);
 			productName = VoiceVerseTests;
-			productReference = D834D0902D16BEC800852AF8 /* VoiceVerseTests.xctest */;
+			productReference = D834D0902D16BEC800852AF8 /* VoiceUniverseTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		D834D0992D16BEC800852AF8 /* VoiceVerseUITests */ = {
+		D834D0992D16BEC800852AF8 /* VoiceUniverseUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D834D0AA2D16BEC800852AF8 /* Build configuration list for PBXNativeTarget "VoiceVerseUITests" */;
+			buildConfigurationList = D834D0AA2D16BEC800852AF8 /* Build configuration list for PBXNativeTarget "VoiceUniverseUITests" */;
 			buildPhases = (
 				D834D0962D16BEC800852AF8 /* Sources */,
 				D834D0972D16BEC800852AF8 /* Frameworks */,
@@ -156,11 +156,11 @@
 			fileSystemSynchronizedGroups = (
 				D834D09D2D16BEC800852AF8 /* VoiceVerseUITests */,
 			);
-			name = VoiceVerseUITests;
+			name = VoiceUniverseUITests;
 			packageProductDependencies = (
 			);
 			productName = VoiceVerseUITests;
-			productReference = D834D09A2D16BEC800852AF8 /* VoiceVerseUITests.xctest */;
+			productReference = D834D09A2D16BEC800852AF8 /* VoiceUniverseUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -186,7 +186,7 @@
 					};
 				};
 			};
-			buildConfigurationList = D834D07A2D16BEC700852AF8 /* Build configuration list for PBXProject "VoiceVerse" */;
+			buildConfigurationList = D834D07A2D16BEC700852AF8 /* Build configuration list for PBXProject "VoiceUniverse" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -200,9 +200,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				D834D07E2D16BEC700852AF8 /* VoiceVerse */,
-				D834D08F2D16BEC800852AF8 /* VoiceVerseTests */,
-				D834D0992D16BEC800852AF8 /* VoiceVerseUITests */,
+				D834D07E2D16BEC700852AF8 /* VoiceUniverse */,
+				D834D08F2D16BEC800852AF8 /* VoiceUniverseTests */,
+				D834D0992D16BEC800852AF8 /* VoiceUniverseUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -258,12 +258,12 @@
 /* Begin PBXTargetDependency section */
 		D834D0922D16BEC800852AF8 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D834D07E2D16BEC700852AF8 /* VoiceVerse */;
+			target = D834D07E2D16BEC700852AF8 /* VoiceUniverse */;
 			targetProxy = D834D0912D16BEC800852AF8 /* PBXContainerItemProxy */;
 		};
 		D834D09C2D16BEC800852AF8 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D834D07E2D16BEC700852AF8 /* VoiceVerse */;
+			target = D834D07E2D16BEC700852AF8 /* VoiceUniverse */;
 			targetProxy = D834D09B2D16BEC800852AF8 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -397,6 +397,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -412,7 +413,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.ChiiMagnus.VoiceVerse;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ChiiMagnus.VoiceUniverse;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = macosx;
@@ -437,6 +438,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -452,7 +454,7 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.ChiiMagnus.VoiceVerse;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ChiiMagnus.VoiceUniverse;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = macosx;
@@ -481,7 +483,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VoiceVerse.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VoiceVerse";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VoiceUniverse.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VoiceUniverse";
 				XROS_DEPLOYMENT_TARGET = 2.1;
 			};
 			name = Debug;
@@ -504,7 +506,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VoiceVerse.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VoiceVerse";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VoiceUniverse.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/VoiceUniverse";
 				XROS_DEPLOYMENT_TARGET = 2.1;
 			};
 			name = Release;
@@ -556,7 +558,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		D834D07A2D16BEC700852AF8 /* Build configuration list for PBXProject "VoiceVerse" */ = {
+		D834D07A2D16BEC700852AF8 /* Build configuration list for PBXProject "VoiceUniverse" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D834D0A22D16BEC800852AF8 /* Debug */,
@@ -565,7 +567,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D834D0A42D16BEC800852AF8 /* Build configuration list for PBXNativeTarget "VoiceVerse" */ = {
+		D834D0A42D16BEC800852AF8 /* Build configuration list for PBXNativeTarget "VoiceUniverse" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D834D0A52D16BEC800852AF8 /* Debug */,
@@ -574,7 +576,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D834D0A72D16BEC800852AF8 /* Build configuration list for PBXNativeTarget "VoiceVerseTests" */ = {
+		D834D0A72D16BEC800852AF8 /* Build configuration list for PBXNativeTarget "VoiceUniverseTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D834D0A82D16BEC800852AF8 /* Debug */,
@@ -583,7 +585,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D834D0AA2D16BEC800852AF8 /* Build configuration list for PBXNativeTarget "VoiceVerseUITests" */ = {
+		D834D0AA2D16BEC800852AF8 /* Build configuration list for PBXNativeTarget "VoiceUniverseUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D834D0AB2D16BEC800852AF8 /* Debug */,
