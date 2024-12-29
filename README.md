@@ -1,5 +1,5 @@
 <h1 align="center">
-    🎉 VoiceVerse
+    VoiceVerse ⚛︎
 </h1>
 
 <div align="center">
