@@ -24,7 +24,16 @@ struct ContentView: View {
     }
     
     var body: some View {
-        NavigationStack {
+        NavigationSplitView {
+            if let pdfDocument = pdfDocument {
+                // 左侧栏：PDF缩略图
+                PDFThumbnailView(pdfDocument: pdfDocument)
+            } else {
+                // 左侧栏：空状态
+                Text("请打开一个 PDF 文件")
+                    .foregroundColor(.secondary)
+            }
+        } detail: {
             if let pdfDocument = pdfDocument {
                 PDFViewerView(
                     pdfDocument: pdfDocument,
@@ -67,33 +76,7 @@ struct ContentView: View {
                             .help("放大")
                         }
                     }
-                    
-                    ToolbarItem(placement: .primaryAction) {
-                        HStack(spacing: 8) {
-                            Button(action: {
-                                if speechManager.isPlaying {
-                                    speechManager.pause()
-                                } else {
-                                    if !sentenceManager.getCurrentSentence().isEmpty {
-                                        speechManager.resume()
-                                    } else if let currentPage = pdfDocument.page(at: 0),
-                                              let pageText = currentPage.string {
-                                        sentenceManager.setText(pageText, pageIndex: 0)
-                                        speechManager.speak()
-                                    }
-                                }
-                            }) {
-                                Label(
-                                    speechManager.isPlaying ? "暂停" : "继续",
-                                    systemImage: speechManager.isPlaying ? "pause.fill" : "play.fill"
-                                )
-                            }
-                            .help(speechManager.isPlaying ? "暂停朗读" : "继续朗读")
-                        }
-                    }
                 }
-                .toolbarBackground(.visible, for: .windowToolbar)
-                .toolbarBackground(.ultraThinMaterial, for: .windowToolbar)
             } else {
                 VStack(spacing: 20) {
                     Button(action: {
@@ -129,25 +112,12 @@ struct ContentView: View {
                 if let document = PDFDocument(url: file) {
                     pdfDocument = document
                     documentTitle = file.lastPathComponent
-                    
-                    // 打印调试信息
-                    print("PDF 总页数: \(document.pageCount)")
-                    
-                    // 获取前5页的句子数
-                    for pageIndex in 0..<min(5, document.pageCount) {
-                        if let page = document.page(at: pageIndex),
-                           let pageText = page.string {
-                            let sentences = splitIntoSentences(pageText)
-                            print("第 \(pageIndex + 1) 页句子数: \(sentences.count)")
-                        }
-                    }
                 }
             case .failure(let error):
                 print("Error selecting file: \(error.localizedDescription)")
             }
         }
         .onAppear {
-            // 监听打开 PDF 的通知
             NotificationCenter.default.addObserver(
                 forName: NSNotification.Name("OpenPDF"),
                 object: nil,
@@ -157,33 +127,55 @@ struct ContentView: View {
             }
         }
     }
+}
+
+struct PDFThumbnailView: View {
+    let pdfDocument: PDFDocument
     
-    // 辅助函数：将文本分割成句子
-    private func splitIntoSentences(_ text: String) -> [String] {
-        let separators = CharacterSet(charactersIn: "。！？\n")
-        var sentences: [String] = []
-        var currentSentence = ""
-        
-        for char in text {
-            currentSentence.append(char)
-            if CharacterSet(charactersIn: String(char)).isSubset(of: separators) {
-                let trimmed = currentSentence.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !trimmed.isEmpty {
-                    sentences.append(trimmed)
+    var body: some View {
+        List {
+            ForEach(0..<pdfDocument.pageCount, id: \.self) { index in
+                if let page = pdfDocument.page(at: index) {
+                    ThumbnailCell(page: page, pageNumber: index + 1)
+                        .frame(height: 160)
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
                 }
-                currentSentence = ""
             }
         }
-        
-        // 处理最后一个句子
-        if !currentSentence.isEmpty {
-            let trimmed = currentSentence.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !trimmed.isEmpty {
-                sentences.append(trimmed)
-            }
+        .listStyle(.sidebar)
+    }
+}
+
+struct ThumbnailCell: View {
+    let page: PDFPage
+    let pageNumber: Int
+    
+    var body: some View {
+        VStack(spacing: 4) {
+            let thumbnail = page.thumbnail(of: CGSize(width: 160, height: 120), for: .artBox)
+            Image(nsImage: thumbnail)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(maxWidth: .infinity)
+                .background(Color.white)
+                .cornerRadius(4)
+                .shadow(radius: 1)
+            
+            Text("第 \(pageNumber) 页")
+                .font(.caption)
+                .foregroundColor(.secondary)
         }
-        
-        return sentences
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            NotificationCenter.default.post(
+                name: NSNotification.Name("GoToPage"),
+                object: nil,
+                userInfo: ["pageIndex": pageNumber - 1]
+            )
+        }
     }
 }
 
