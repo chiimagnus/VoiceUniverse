@@ -8,6 +8,27 @@
 import SwiftUI
 import PDFKit
 import UniformTypeIdentifiers
+import AppKit
+
+// 添加 SplitViewModifier 来控制分割视图的行为
+struct SplitViewModifier: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        DispatchQueue.main.async {
+            if let splitView = view.enclosingScrollView?.superview?.superview?.superview as? NSSplitView {
+                // 设置左侧栏的最小和最大宽度
+                splitView.setHoldingPriority(NSLayoutConstraint.Priority(251), forSubviewAt: 0)
+                if let item = splitView.arrangedSubviews.first {
+                    item.widthAnchor.constraint(greaterThanOrEqualToConstant: 150).isActive = true
+                    item.widthAnchor.constraint(lessThanOrEqualToConstant: 200).isActive = true
+                }
+            }
+        }
+        return view
+    }
+    
+    func updateNSView(_ nsView: NSView, context: Context) {}
+}
 
 struct ContentView: View {
     @StateObject private var sentenceManager = SentenceManager()
@@ -25,14 +46,17 @@ struct ContentView: View {
     
     var body: some View {
         NavigationSplitView {
-            if let pdfDocument = pdfDocument {
-                // 左侧栏：PDF缩略图
-                PDFThumbnailView(pdfDocument: pdfDocument)
-            } else {
-                // 左侧栏：空状态
-                Text("")
-                    .foregroundColor(.secondary)
+            Group {
+                if let pdfDocument = pdfDocument {
+                    // 左侧栏：PDF缩略图
+                    PDFThumbnailView(pdfDocument: pdfDocument)
+                } else {
+                    // 左侧栏：空状态
+                    Text("")
+                        .foregroundColor(.secondary)
+                }
             }
+            .background(SplitViewModifier())
         } detail: {
             if let pdfDocument = pdfDocument {
                 PDFViewerView(
@@ -97,7 +121,10 @@ struct ContentView: View {
                 .navigationTitle("VoiceVerse")
             }
         }
+        .navigationSplitViewStyle(.balanced)
+        .frame(minWidth: 800, minHeight: 600)
         .background(Color(NSColor.windowBackgroundColor))
+        
         .fileImporter(
             isPresented: $showFileImporter,
             allowedContentTypes: [UTType.pdf],
@@ -133,27 +160,32 @@ struct PDFThumbnailView: View {
     let pdfDocument: PDFDocument
     
     var body: some View {
-        List {
-            ForEach(0..<pdfDocument.pageCount, id: \.self) { index in
-                if let page = pdfDocument.page(at: index) {
-                    ThumbnailCell(page: page, pageNumber: index + 1)
-                        .frame(height: 160)
-                        .listRowInsets(EdgeInsets())
-                        .listRowSeparator(.hidden)
+        GeometryReader { geometry in
+            List {
+                ForEach(0..<pdfDocument.pageCount, id: \.self) { index in
+                    if let page = pdfDocument.page(at: index) {
+                        ThumbnailCell(page: page, pageNumber: index + 1, containerWidth: geometry.size.width)
+                            .frame(height: geometry.size.width * 1.2) // 保持合适的宽高比
+                            .listRowInsets(EdgeInsets())
+                            .listRowSeparator(.hidden)
+                    }
                 }
             }
+            .listStyle(.sidebar)
         }
-        .listStyle(.sidebar)
     }
 }
 
 struct ThumbnailCell: View {
     let page: PDFPage
     let pageNumber: Int
+    let containerWidth: CGFloat
     
     var body: some View {
         VStack(spacing: 4) {
-            let thumbnail = page.thumbnail(of: CGSize(width: 160, height: 120), for: .artBox)
+            let thumbnailWidth = containerWidth - 16 // 减去水平内边距
+            let thumbnailHeight = thumbnailWidth * 1.4 // 保持合适的宽高比
+            let thumbnail = page.thumbnail(of: CGSize(width: thumbnailWidth, height: thumbnailHeight), for: .artBox)
             Image(nsImage: thumbnail)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
