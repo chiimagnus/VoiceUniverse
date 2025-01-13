@@ -48,7 +48,7 @@ final class SpeechManager: NSObject, ObservableObject {
             isPlaying = true
             
         case .cosyVoice:
-            cosyVoiceManager.synthesize(text: sentence) { [weak self] success in
+            cosyVoiceManager.synthesize(text: sentence, model: .sft) { [weak self] success in
                 if success {
                     self?.isPlaying = true
                 } else {
