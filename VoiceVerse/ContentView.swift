@@ -182,3 +182,4 @@ struct ThumbnailCell: View {
 #Preview {
     ContentView()
 }
+
