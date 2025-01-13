@@ -30,7 +30,7 @@ struct ContentView: View {
                 PDFThumbnailView(pdfDocument: pdfDocument)
             } else {
                 // 左侧栏：空状态
-                Text("请打开一个 PDF 文件")
+                Text("")
                     .foregroundColor(.secondary)
             }
         } detail: {
