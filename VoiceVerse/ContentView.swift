@@ -86,18 +86,15 @@ struct ContentView: View {
                             Divider()
                             
                             Button(action: {
-                                NotificationCenter.default.post(name: NSNotification.Name("ZoomOut"), object: nil)
+                                if speechManager.isPlaying {
+                                    speechManager.pause()
+                                } else {
+                                    speechManager.resume()
+                                }
                             }) {
-                                Image(systemName: "minus.magnifyingglass")
+                                Image(systemName: speechManager.isPlaying ? "pause.fill" : "play.fill")
                             }
-                            .help("缩小")
-                            
-                            Button(action: {
-                                NotificationCenter.default.post(name: NSNotification.Name("ZoomIn"), object: nil)
-                            }) {
-                                Image(systemName: "plus.magnifyingglass")
-                            }
-                            .help("放大")
+                            .help(speechManager.isPlaying ? "暂停朗读" : "开始朗读")
                         }
                     }
                 }
