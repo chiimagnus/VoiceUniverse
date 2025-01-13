@@ -95,6 +95,15 @@ struct ContentView: View {
                                 Image(systemName: speechManager.isPlaying ? "pause.fill" : "play.fill")
                             }
                             .help(speechManager.isPlaying ? "暂停朗读" : "开始朗读")
+                            
+                            Divider()
+                            
+                            Button(action: {
+                                speechManager.toggleVoiceEngine()
+                            }) {
+                                Image(systemName: speechManager.currentEngine == .system ? "waveform" : "person.wave.2")
+                            }
+                            .help(speechManager.currentEngine == .system ? "切换到AI语音" : "切换到系统语音")
                         }
                     }
                 }

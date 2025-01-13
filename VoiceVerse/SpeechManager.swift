@@ -6,7 +6,15 @@ final class SpeechManager: NSObject, ObservableObject {
     @Published var isPlaying = false
     let synthesizer = AVSpeechSynthesizer()
     private let sentenceManager: SentenceManager
+    private let cosyVoiceManager = CosyVoiceManager()
     var isUserInitiated = false
+    
+    // 语音引擎选择
+    enum VoiceEngine {
+        case system
+        case cosyVoice
+    }
+    @Published var currentEngine: VoiceEngine = .system
     
     var onFinishSpeaking: (() -> Void)?
     var onFinishSentence: (() -> Void)?
@@ -31,10 +39,26 @@ final class SpeechManager: NSObject, ObservableObject {
     
     private func speakSentence(_ sentence: String) {
         print("🟣 speakSentence() called with: \(sentence)")
-        let utterance = AVSpeechUtterance(string: sentence)
-        configureUtterance(utterance)
-        synthesizer.speak(utterance)
-        isPlaying = true
+        
+        switch currentEngine {
+        case .system:
+            let utterance = AVSpeechUtterance(string: sentence)
+            configureUtterance(utterance)
+            synthesizer.speak(utterance)
+            isPlaying = true
+            
+        case .cosyVoice:
+            cosyVoiceManager.synthesize(text: sentence) { [weak self] success in
+                if success {
+                    self?.isPlaying = true
+                } else {
+                    // 如果CosyVoice失败，回退到系统语音
+                    print("CosyVoice合成失败，回退到系统语音")
+                    self?.currentEngine = .system
+                    self?.speakSentence(sentence)
+                }
+            }
+        }
     }
     
     private func configureUtterance(_ utterance: AVSpeechUtterance) {
@@ -46,7 +70,12 @@ final class SpeechManager: NSObject, ObservableObject {
     
     func stop() {
         print("🔴 stop() called")
-        synthesizer.stopSpeaking(at: .immediate)
+        switch currentEngine {
+        case .system:
+            synthesizer.stopSpeaking(at: .immediate)
+        case .cosyVoice:
+            cosyVoiceManager.stop()
+        }
         isPlaying = false
         sentenceManager.reset()
         // 清除高亮也通过 sentenceManager 处理
@@ -55,19 +84,32 @@ final class SpeechManager: NSObject, ObservableObject {
     
     func pause() {
         print("⏸️ Pausing speech")
-        synthesizer.pauseSpeaking(at: .immediate)
+        switch currentEngine {
+        case .system:
+            synthesizer.pauseSpeaking(at: .immediate)
+        case .cosyVoice:
+            cosyVoiceManager.pause()
+        }
         isPlaying = false
     }
     
     func resume() {
         print("▶️ Resuming speech")
-        if synthesizer.isPaused {
-            synthesizer.continueSpeaking()
-            isPlaying = true
-        } else {
-            // 如果不是暂停状态，可能需要重新开始朗读当前句子
+        switch currentEngine {
+        case .system:
+            if synthesizer.isPaused {
+                synthesizer.continueSpeaking()
+                isPlaying = true
+            } else {
+                // 如果不是暂停状态，可能需要重新开始朗读当前句子
+                if !sentenceManager.getCurrentSentence().isEmpty {
+                    speakSentence(sentenceManager.getCurrentSentence())
+                }
+            }
+        case .cosyVoice:
             if !sentenceManager.getCurrentSentence().isEmpty {
-                speakSentence(sentenceManager.getCurrentSentence())
+                cosyVoiceManager.resume()
+                isPlaying = true
             }
         }
     }
@@ -80,7 +122,7 @@ final class SpeechManager: NSObject, ObservableObject {
         
         // 如果当前正在朗读，先停止
         if isPlaying {
-            synthesizer.stopSpeaking(at: .immediate)
+            stop()
         }
         
         // 获取并朗读下一句
@@ -88,6 +130,12 @@ final class SpeechManager: NSObject, ObservableObject {
             // 直接朗读当前句子
             speakSentence(nextSentence)
         }
+    }
+    
+    // 切换语音引擎
+    func toggleVoiceEngine() {
+        stop() // 先停止当前播放
+        currentEngine = currentEngine == .system ? .cosyVoice : .system
     }
 }
 

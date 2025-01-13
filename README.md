@@ -16,7 +16,7 @@ PS：目前macOS 14.6 以上版本支持。
 - 🔊 文本朗读
 - ⌨️ 快捷键支持
 - 📍 智能定位当前朗读位置🌟
-- [ ] 人声朗读API调用
+- [ ] 人声朗读API调用，[cosyoice](https://github.com/FunAudioLLM/CosyVoice)
 
 ## 2. 使用说明
 ### 基本操作

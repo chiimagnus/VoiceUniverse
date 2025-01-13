@@ -9,9 +9,14 @@ import SwiftUI
 
 @main
 struct VoiceVerseApp: App {
+    @State private var showSettings = false
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .sheet(isPresented: $showSettings) {
+                    SettingsView()
+                }
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified)
@@ -81,6 +86,14 @@ struct VoiceVerseApp: App {
                     NotificationCenter.default.post(name: NSNotification.Name("PreviousPage"), object: nil)
                 }
                 .keyboardShortcut(.leftArrow, modifiers: .command)
+            }
+            
+            // 添加设置菜单
+            CommandGroup(after: .appSettings) {
+                Button("语音设置...") {
+                    showSettings = true
+                }
+                .keyboardShortcut(",", modifiers: .command)
             }
         }
     }
