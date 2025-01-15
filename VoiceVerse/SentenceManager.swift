@@ -65,18 +65,21 @@ final class SentenceManager: ObservableObject {
         
         // 移动到下一句
         currentSentenceIndex += 1
+        
+        // 检查是否超出范围
         if currentSentenceIndex >= currentPageSentences.count {
+            print("Reached beyond last sentence")
             currentSentenceIndex = currentPageSentences.count - 1
             isLastSentence = true
-            print("Reached last sentence")
             return nil
         }
         
+        // 获取下一句
         currentSentence = currentPageSentences[currentSentenceIndex]
+        // 检查是否是最后一句
         isLastSentence = currentSentenceIndex == currentPageSentences.count - 1
-        print("Next sentence [\(currentSentenceIndex + 1)/\(currentPageSentences.count)] on page \(currentPageIndex): \(currentSentence)")
         
-        // 触发句子变化回调，这会导致高亮更新
+        print("Next sentence [\(currentSentenceIndex + 1)/\(currentPageSentences.count)] on page \(currentPageIndex): \(currentSentence)")
         onNextSentence?(currentSentence)
         return currentSentence
     }

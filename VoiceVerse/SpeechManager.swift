@@ -77,9 +77,13 @@ final class SpeechManager: NSObject, ObservableObject {
             cosyVoiceManager.stop()
         }
         isPlaying = false
-        sentenceManager.reset()
-        // 清除高亮也通过 sentenceManager 处理
-        sentenceManager.onNextSentence?("")
+        
+        // 只有在非用户手动触发时才重置状态
+        if !isUserInitiated {
+            sentenceManager.reset()
+            // 清除高亮也通过 sentenceManager 处理
+            sentenceManager.onNextSentence?("")
+        }
     }
     
     func pause() {
@@ -120,7 +124,7 @@ final class SpeechManager: NSObject, ObservableObject {
         // 标记为用户手动触发
         isUserInitiated = true
         
-        // 如果当前正在朗读，先停止
+        // 如果当前正在朗读，先停止播放但不重置状态
         if isPlaying {
             stop()
         }
@@ -133,6 +137,8 @@ final class SpeechManager: NSObject, ObservableObject {
             // 如果没有下一句了，触发完成回调
             print("🔴 No more sentences to speak")
             onFinishSpeaking?()
+            // 清除高亮
+            sentenceManager.onNextSentence?("")
         }
     }
     
