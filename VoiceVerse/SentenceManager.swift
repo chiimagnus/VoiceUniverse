@@ -57,11 +57,18 @@ final class SentenceManager: ObservableObject {
             return currentSentence
         }
         
-        // 否则移动到下一句
+        // 如果已经是最后一句，返回 nil
+        if isLastSentence {
+            print("Already at last sentence")
+            return nil
+        }
+        
+        // 移动到下一句
         currentSentenceIndex += 1
         if currentSentenceIndex >= currentPageSentences.count {
             currentSentenceIndex = currentPageSentences.count - 1
             isLastSentence = true
+            print("Reached last sentence")
             return nil
         }
         

@@ -48,7 +48,7 @@ final class SpeechManager: NSObject, ObservableObject {
             isPlaying = true
             
         case .cosyVoice:
-            cosyVoiceManager.synthesize(text: sentence, model: .sft) { [weak self] success in
+            cosyVoiceManager.synthesize(text: sentence) { [weak self] success in
                 if success {
                     self?.isPlaying = true
                 } else {
@@ -129,6 +129,10 @@ final class SpeechManager: NSObject, ObservableObject {
         if let nextSentence = sentenceManager.nextSentence() {
             // 直接朗读当前句子
             speakSentence(nextSentence)
+        } else {
+            // 如果没有下一句了，触发完成回调
+            print("🔴 No more sentences to speak")
+            onFinishSpeaking?()
         }
     }
     
